@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== ENUMS =====
+enum LeadSource {
+  site
+  email
+  phone
+  referral
+  manual
+}
+
+enum LeadStatus {
+  new
+  processed
+  converted
+}
+
+enum OpportunityStatus {
+  open
+  won
+  lost
+}
+
+enum ActivityType {
+  note
+  task
+}
+
+// ===== MODELS =====
+
+model Lead {
+  id        String     @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  source    LeadSource
+  status    LeadStatus @default(new)
+  owner     String?
+  budget    Float?
+  timeline  String?
+  comment   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  opportunity Opportunity?
+
+  @@index([source])
+  @@index([status])
+}
+
+model Stage {
+  id       String         @id @default(cuid())
+  name     String         @unique
+  position Int            @unique
+  opportunities Opportunity[]
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  website   String?
+  industry  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts      Contact[]
+  opportunities Opportunity[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  opportunities Opportunity[]
+
+  @@index([accountId])
+}
+
+model Opportunity {
+  id         String            @id @default(cuid())
+  title      String
+  amount     Float?
+  status     OpportunityStatus @default(open)
+  reasonLost String?
+  dueDate    DateTime?
+  closeDate  DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: SetNull)
+
+  leadId String? @unique
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  activities Activity[]
+
+  @@index([stageId])
+  @@index([status])
+  @@index([accountId])
+  @@index([contactId])
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  type      ActivityType
+  text      String
+  dueDate   DateTime?
+  done      Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+
+  @@index([opportunityId])
+  @@index([done, dueDate])
+}

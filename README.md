@@ -46,8 +46,8 @@ CRM-lite — локальное однопользовательское веб-
 После установки создай dev-БД и проверь подключение:
 
 ```bash
-createdb crm_lite_dev
-psql -d crm_lite_dev -c "SELECT 1;"
+createdb crm_dev
+psql -d crm_dev -c "SELECT 1;"
 ```
 
 Ожидаемый ответ: `?column?`\n`----------`\n`        1`\n`(1 row)`.

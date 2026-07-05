@@ -4,6 +4,15 @@
 >
 > **Контекст для агента (M15):** прочитай `prisma/schema.prisma` (если есть в `home-work/`) + `../Plan.md` §6.1 + [`../../docs/final-mvp.md`](../../docs/final-mvp.md) §3.1.
 
+## 0.1 Unique-индексы (обязательные, для seed фазы 4 и convertLead фазы 8)
+
+- `Account.name @unique` — уникальное имя компании; нужно для `upsert` по `where: { name }` в seed (фаза 4) и `convertLead` (фаза 8).
+- `Contact.email? @unique` — уникальный email контакта; множественные `NULL` допустимы (PostgreSQL `NULL ≠ NULL`); защищает от дублей контактов, используется в seed.
+- `Opportunity.leadId? @unique` — защита от повторной конвертации (D14, см. §1 ниже).
+- **`Lead.email БЕЗ @unique`** — лиды могут приходить без email (только телефон), и несколько лидов с одного email — норма (человек дважды заполнил форму). Seed фазы 4 upsert по `Lead.email` делать **нельзя** — использовать явные slug-ID или другой уникальный ключ.
+
+> **Примечание по миграциям:** `@unique` на `Account.name` и `Contact.email` добавлены отдельной миграцией `add_unique_account_name_contact_email` поверх `init_crm_schema`. Если БД `crm_dev` была создана ранее без этих индексов — применить миграцию через `npx prisma migrate deploy`.
+
 ## 0. Предварительная очистка (D11 — СТРОГИЙ ПОРЯДОК)
 
 НЕ удалять `prisma.config.ts` до удаления зависимостей — иначе сборка упадёт.
@@ -48,7 +57,7 @@ enum ActivityType      { note task }
 model Lead {
   id        String     @id @default(cuid())
   name      String                                   // 2–120, trim
-  email     String?
+  email     String?                                  // БЕЗ @unique — см. §0.1
   phone     String?
   company   String?
   source    LeadSource
@@ -76,7 +85,7 @@ model Stage {
 
 model Account {
   id        String   @id @default(cuid())
-  name      String                                  // 2–200, @unique, trim
+  name      String   @unique                       // 2–200, trim — см. §0.1
   website   String?
   industry  String?
   createdAt DateTime @default(now())
@@ -89,7 +98,7 @@ model Account {
 model Contact {
   id        String   @id @default(cuid())
   name      String                                  // 2–120, trim
-  email     String?
+  email     String?  @unique                       // см. §0.1
   phone     String?
   role      String?
   createdAt DateTime @default(now())
