@@ -1,6 +1,7 @@
 import { DrawerHeader } from './DrawerHeader';
 import { DrawerRelatedList } from './DrawerRelatedList';
 import { LeadForm } from './LeadForm';
+import { ConvertLeadAccordion } from './ConvertLeadAccordion';
 import type { Lead } from '@prisma/client';
 import Link from 'next/link';
 
@@ -40,6 +41,14 @@ export function LeadCard({ lead }: { lead: LeadWithOpportunity }) {
 
       <div className="px-6">
         <LeadForm lead={lead} />
+      </div>
+
+      <div className="px-6">
+        <ConvertLeadAccordion
+          leadId={lead.id}
+          leadStatus={lead.status}
+          defaultAccountName={lead.company ?? ''}
+        />
       </div>
 
       <DrawerRelatedList title="Связи" items={relatedItems} context="inside-drawer" />
