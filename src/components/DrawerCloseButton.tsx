@@ -1,13 +1,13 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useDrawerClose } from './Drawer';
 
 export function DrawerCloseButton() {
-  const router = useRouter();
+  const close = useDrawerClose();
   return (
     <button
       type="button"
-      onClick={() => router.back()}
+      onClick={close}
       aria-label="Закрыть"
       className="rounded p-1 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50"
     >

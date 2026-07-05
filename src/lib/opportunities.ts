@@ -5,6 +5,7 @@ import { safeRevalidate } from './revalidate';
 import { prisma } from './db';
 import {
   opportunityInputSchema,
+  opportunityStageUpdateSchema,
   type OpportunityInput,
 } from './validators';
 import type { Paginated, ListFilters, Result } from './types';
@@ -103,9 +104,71 @@ export async function getOpportunities(
 }
 
 export async function updateOpportunityStage(
-  _opportunityId: string,
-  _newStageId: string,
-  _reasonLost?: string
+  opportunityId: string,
+  newStageId: string,
+  reasonLost?: string
 ): Promise<Result<Opportunity>> {
-  throw new Error('updateOpportunityStage: Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р вЂ¦Р В Р’В°Р РЋР РЏ Р РЋР вЂљР В Р’ВµР В Р’В°Р В Р’В»Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ Р В Р вЂ  phase-9-funnel.md (Р В РЎвЂ”Р РЋР вЂљР В Р’В°Р В Р вЂ Р В РЎвЂР В Р’В»Р В Р’В° won/lost)');
+  // 1. Zod-валидация входа.
+  const parsed = opportunityStageUpdateSchema.safeParse({
+    opportunityId,
+    newStageId,
+    reasonLost,
+  });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  // 2. Загрузить opportunity + целевую стадию.
+  const [opp, newStage] = await Promise.all([
+    prisma.opportunity.findUnique({ where: { id: parsed.data.opportunityId } }),
+    prisma.stage.findUnique({ where: { id: parsed.data.newStageId } }),
+  ]);
+  if (!opp) return { ok: false, message: 'opportunity_not_found' };
+  if (!newStage) return { ok: false, message: 'stage_not_found' };
+
+  // 3. Правила won (Plan.md §6.3).
+  if (newStage.name === 'won') {
+    if (opp.amount === null || opp.amount === undefined) {
+      return { ok: false, message: 'amount_required' };
+    }
+    if (!opp.contactId) {
+      return { ok: false, message: 'contact_required' };
+    }
+  }
+
+  // 4. Правила lost.
+  if (newStage.name === 'lost') {
+    if (!parsed.data.reasonLost || !parsed.data.reasonLost.trim()) {
+      return { ok: false, message: 'reason_lost_required' };
+    }
+  }
+
+  // 5. Синхронизация status + closeDate при переходе в won/lost
+  //    (Plan.md §6.5 — стадия и статус всегда согласованы).
+  const isFinal = newStage.name === 'won' || newStage.name === 'lost';
+  const newStatus: 'open' | 'won' | 'lost' = isFinal
+    ? (newStage.name as 'won' | 'lost')
+    : 'open';
+  const newCloseDate: Date | null = isFinal ? new Date() : null;
+
+  // 6. Обновить opportunity.
+  const updated = await prisma.opportunity.update({
+    where: { id: opp.id },
+    data: {
+      stageId:    newStage.id,
+      status:     newStatus,
+      closeDate:  newCloseDate,
+      reasonLost: newStage.name === 'lost' && parsed.data.reasonLost ? parsed.data.reasonLost.trim() : null,
+    },
+  });
+
+  // 7. Инвалидация кэша (D13 — для согласованности списка ↔ Drawer).
+  safeRevalidate('/opportunities');
+  safeRevalidate(`/opportunities/${opp.id}`);
+  safeRevalidate('/dashboard');
+
+  return { ok: true, data: updated };
 }

@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { getContacts } from '@/lib/contacts';
+import { getAccounts } from '@/lib/accounts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
+import { CreateContactForm } from '@/components/CreateContactForm';
+import { ContactRowWithDrawer } from '@/components/ContactRowWithDrawer';
 
 type SP = { q?: string; accountId?: string; page?: string };
 
@@ -12,11 +15,14 @@ export default async function ContactsPage({
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const { items, page, totalPages, total } = await getContacts({
-    q:         sp.q,
-    accountId: sp.accountId,
-    page:      sp.page ? Number(sp.page) : 1,
-  });
+  const [{ items, page, totalPages, total }, accountsPage] = await Promise.all([
+    getContacts({
+      q:         sp.q,
+      accountId: sp.accountId,
+      page:      sp.page ? Number(sp.page) : 1,
+    }),
+    getAccounts({ limit: 100 }),
+  ]);
 
   const baseSearchParams: Record<string, string | undefined> = {
     q: sp.q,
@@ -33,6 +39,9 @@ export default async function ContactsPage({
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput placeholder="Поиск по имени или email…" />
         <FilterBar current={baseSearchParams} filters={[]} />
+        <div className="sm:ml-auto">
+          <CreateContactForm accounts={accountsPage.items} />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -53,29 +62,7 @@ export default async function ContactsPage({
                 </td>
               </tr>
             ) : (
-              items.map((c) => (
-                <tr key={c.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="px-3 py-2 text-zinc-900 dark:text-zinc-50">
-                    <Link href={`/contacts/${c.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
-                      {c.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{c.email ?? '—'}</td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{c.phone ?? '—'}</td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                    {c.account ? (
-                      <a
-                        href={`/accounts/${c.account.id}`}
-                        className="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:underline"
-                      >
-                        {c.account.name}
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                </tr>
-              ))
+              items.map((c) => <ContactRowWithDrawer key={c.id} contact={c} />)
             )}
           </tbody>
         </table>

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const trimmed = (max: number) => z.string().trim().min(1).max(max);
 const optTrimmed = (max: number) => trimmed(max).optional().or(z.literal(''));
-const cuid = z.string().cuid();
+const id = z.string().regex(/^[a-z0-9-]+$/).min(1).max(50);
 
 const LeadSourceEnum = z.enum(['site', 'email', 'phone', 'referral', 'manual']);
 const LeadStatusEnum = z.enum(['new', 'processed', 'converted']);
@@ -37,23 +37,23 @@ export const contactInputSchema = z.object({
   email:     z.string().trim().email().optional().or(z.literal('')),
   phone:     optTrimmed(40),
   role:      optTrimmed(100),
-  accountId: cuid.optional().or(z.literal('')),
+  accountId: id.optional().or(z.literal('')),
 });
 export type ContactInput = z.infer<typeof contactInputSchema>;
 
 export const opportunityInputSchema = z.object({
   title:     trimmed(200),
   amount:    z.number().positive().optional(),
-  stageId:   cuid,
-  accountId: cuid.optional(),
-  contactId: cuid.optional(),
+  stageId:   id,
+  accountId: id.optional(),
+  contactId: id.optional(),
   dueDate:   z.string().datetime().optional(),
 });
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
 export const opportunityStageUpdateSchema = z.object({
-  opportunityId: cuid,
-  newStageId:    cuid,
+  opportunityId: id,
+  newStageId:    id,
   reasonLost:    optTrimmed(500),
 });
 export type OpportunityStageUpdateInput = z.infer<typeof opportunityStageUpdateSchema>;
@@ -81,7 +81,7 @@ export type ConvertLeadInput = z.infer<typeof convertLeadSchema>;
 
 export const activityInputSchema = z
   .object({
-    opportunityId: cuid,
+    opportunityId: id,
     type:          ActivityTypeEnum,
     text:          trimmed(1000),
     dueDate:       z.string().datetime().optional(),
@@ -98,7 +98,7 @@ export const activityInputSchema = z
 export type ActivityInput = z.infer<typeof activityInputSchema>;
 
 export const toggleDoneSchema = z.object({
-  id:   cuid,
+  id:   id,
   done: z.boolean(),
 });
 export type ToggleDoneInput = z.infer<typeof toggleDoneSchema>;

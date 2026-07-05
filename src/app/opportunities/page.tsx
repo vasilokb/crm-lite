@@ -1,10 +1,13 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
 import { getOpportunities } from '@/lib/opportunities';
+import { getStages } from '@/lib/stages';
+import { getAccounts } from '@/lib/accounts';
+import { getContacts } from '@/lib/contacts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
-import { Badge } from '@/components/Badge';
+import { CreateOpportunityForm } from '@/components/CreateOpportunityForm';
+import { OpportunityRowWithDrawer } from '@/components/OpportunityRowWithDrawer';
 
 type SP = { q?: string; stage?: string; status?: string; page?: string };
 
@@ -22,26 +25,25 @@ const STATUS_OPTIONS = [
   { value: 'lost', label: 'Проиграна' },
 ];
 
-function formatAmount(value: number | null): string {
-  if (value === null || value === undefined) return '—';
-  return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
-}
-
 export default async function OpportunitiesPage({
   searchParams,
 }: {
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const stages = await prisma.stage.findMany();
+  const stages = await getStages();
   const stageId = sp.stage ? stages.find((s) => s.name === sp.stage)?.id : undefined;
 
-  const { items, page, totalPages, total } = await getOpportunities({
-    q:       sp.q,
-    stageId: stageId,
-    status:  sp.status,
-    page:    sp.page ? Number(sp.page) : 1,
-  });
+  const [{ items, page, totalPages, total }, accountsPage, contactsPage] = await Promise.all([
+    getOpportunities({
+      q:       sp.q,
+      stageId: stageId,
+      status:  sp.status,
+      page:    sp.page ? Number(sp.page) : 1,
+    }),
+    getAccounts({ limit: 100 }),
+    getContacts({ limit: 100 }),
+  ]);
 
   const baseSearchParams: Record<string, string | undefined> = {
     q:      sp.q,
@@ -65,6 +67,13 @@ export default async function OpportunitiesPage({
             { name: 'status', label: 'Статус', options: STATUS_OPTIONS },
           ]}
         />
+        <div className="sm:ml-auto">
+          <CreateOpportunityForm
+            stages={stages}
+            accounts={accountsPage.items}
+            contacts={contactsPage.items}
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -87,28 +96,7 @@ export default async function OpportunitiesPage({
                 </td>
               </tr>
             ) : (
-              items.map((opp) => (
-                <tr key={opp.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="px-3 py-2 text-zinc-900 dark:text-zinc-50">
-                    <Link href={`/opportunities/${opp.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
-                      {opp.title}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-right text-zinc-700 dark:text-zinc-300 tabular-nums">
-                    {formatAmount(opp.amount)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <Badge variant={opp.stage.name as 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'}>
-                      {opp.stage.name}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Badge variant={opp.status}>{opp.status}</Badge>
-                  </td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{opp.account?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{opp.contact?.name ?? '—'}</td>
-                </tr>
-              ))
+              items.map((opp) => <OpportunityRowWithDrawer key={opp.id} opportunity={opp} stages={stages} />)
             )}
           </tbody>
         </table>

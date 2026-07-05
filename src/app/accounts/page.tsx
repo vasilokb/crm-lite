@@ -1,8 +1,9 @@
-import Link from 'next/link';
 import { getAccounts } from '@/lib/accounts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
+import { CreateAccountForm } from '@/components/CreateAccountForm';
+import { AccountRowWithDrawer } from '@/components/AccountRowWithDrawer';
 
 type SP = { q?: string; page?: string };
 
@@ -29,6 +30,9 @@ export default async function AccountsPage({
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput placeholder="Поиск по названию компании…" />
         <FilterBar current={baseSearchParams} filters={[]} />
+        <div className="sm:ml-auto">
+          <CreateAccountForm />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -49,40 +53,7 @@ export default async function AccountsPage({
                 </td>
               </tr>
             ) : (
-              items.map((acc) => (
-                <tr key={acc.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="px-3 py-2 text-zinc-900 dark:text-zinc-50">
-                    <Link href={`/accounts/${acc.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
-                      {acc.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                    {acc.website ? (
-                      <a href={acc.website} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                        {acc.website}
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    <Link
-                      href={`/accounts/${acc.id}#contacts`}
-                      className="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 hover:underline"
-                    >
-                      {acc._count.contacts}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Link
-                      href={`/accounts/${acc.id}#opportunities`}
-                      className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-950/40 px-2 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-800 hover:underline"
-                    >
-                      {acc._count.opportunities}
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              items.map((acc) => <AccountRowWithDrawer key={acc.id} account={acc} />)
             )}
           </tbody>
         </table>

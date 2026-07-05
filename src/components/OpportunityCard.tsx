@@ -1,5 +1,8 @@
 import { DrawerHeader } from './DrawerHeader';
 import { OpportunityForm } from './OpportunityForm';
+import { StageProgressBar } from './StageProgressBar';
+import { ActivityTimeline } from './ActivityTimeline';
+import { ActivityForm } from './ActivityForm';
 import type { Account, Activity, Contact, Opportunity, Stage } from '@prisma/client';
 import Link from 'next/link';
 
@@ -15,7 +18,7 @@ export function OpportunityCard({
   stages,
 }: {
   opportunity: OpportunityFull;
-  stages: Array<{ id: string; name: string }>;
+  stages: Stage[];
 }) {
   return (
     <article className="flex flex-col gap-4">
@@ -25,6 +28,17 @@ export function OpportunityCard({
         status={opportunity.status}
         stage={opportunity.stage.name}
       />
+
+      <div className="px-6 pt-4">
+        <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">Воронка</h3>
+        <StageProgressBar
+          opportunityId={opportunity.id}
+          currentStageId={opportunity.stageId}
+          stages={stages}
+          opportunityAmount={opportunity.amount}
+          opportunityContactId={opportunity.contactId}
+        />
+      </div>
 
       <div className="px-6">
         <OpportunityForm opportunity={opportunity} stages={stages} />
@@ -79,27 +93,15 @@ export function OpportunityCard({
       </section>
 
       <section className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
-        <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Активности ({opportunity.activities.length})
-        </h3>
-        {opportunity.activities.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Нет активностей</p>
-        ) : (
-          <ul className="flex flex-col gap-2 text-sm">
-            {opportunity.activities.map((a) => (
-              <li key={a.id} className="flex items-start gap-2">
-                <span className="text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wide">
-                  {a.type}{' '}
-                  {a.type === 'task' && (a.done ? '(✓)' : '(○)')}
-                </span>
-                <span className="text-zinc-700 dark:text-zinc-300">{a.text}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          Timeline с toggle done — фаза 10.
-        </p>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Активности ({opportunity.activities.length})
+          </h3>
+        </div>
+        <ActivityForm opportunityId={opportunity.id} />
+        <div className="mt-4">
+          <ActivityTimeline activities={opportunity.activities} />
+        </div>
       </section>
     </article>
   );

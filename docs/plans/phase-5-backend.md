@@ -45,7 +45,7 @@ import { z } from 'zod';
 
 const trimmed = (max: number) => z.string().trim().min(1).max(max);
 const optTrimmed = (max: number) => trimmed(max).optional().or(z.literal(''));
-const cuid = z.string().cuid();
+const id = z.string().regex(/^[a-z0-9-]+$/).min(1).max(50);  // A15: cuid и slug-id
 const LeadSourceEnum = z.enum(['site', 'email', 'phone', 'referral', 'manual']);
 const LeadStatusEnum = z.enum(['new', 'processed', 'converted']);
 const OpportunityStatusEnum = z.enum(['open', 'won', 'lost']);

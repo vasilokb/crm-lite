@@ -1,9 +1,13 @@
 import Link from 'next/link';
 import { getLeads } from '@/lib/leads';
+import { getAccounts } from '@/lib/accounts';
+import { getContacts } from '@/lib/contacts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/Badge';
+import { CreateLeadForm } from '@/components/CreateLeadForm';
+import { LeadRowWithDrawer } from '@/components/LeadRowWithDrawer';
 
 type SP = { q?: string; source?: string; status?: string; page?: string };
 
@@ -13,12 +17,16 @@ export default async function LeadsPage({
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const { items, page, totalPages, total } = await getLeads({
-    q:        sp.q,
-    source:   sp.source,
-    status:   sp.status,
-    page:     sp.page ? Number(sp.page) : 1,
-  });
+  const [{ items, page, totalPages, total }, accountsPage, contactsPage] = await Promise.all([
+    getLeads({
+      q:        sp.q,
+      source:   sp.source,
+      status:   sp.status,
+      page:     sp.page ? Number(sp.page) : 1,
+    }),
+    getAccounts({ limit: 100 }),
+    getContacts({ limit: 100 }),
+  ]);
 
   const baseSearchParams: Record<string, string | undefined> = {
     q:      sp.q,
@@ -58,6 +66,9 @@ export default async function LeadsPage({
             },
           ]}
         />
+        <div className="sm:ml-auto">
+          <CreateLeadForm accounts={accountsPage.items} contacts={contactsPage.items} />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -80,23 +91,12 @@ export default async function LeadsPage({
               </tr>
             ) : (
               items.map((lead) => (
-                <tr key={lead.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="px-3 py-2 text-zinc-900 dark:text-zinc-50">
-                    <Link href={`/leads/${lead.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
-                      {lead.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Badge variant={lead.source}>{lead.source}</Badge>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Badge variant={lead.status}>{lead.status}</Badge>
-                  </td>
-                  <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{lead.company ?? '—'}</td>
-                  <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">
-                    {new Date(lead.createdAt).toLocaleDateString('ru-RU')}
-                  </td>
-                </tr>
+                <LeadRowWithDrawer
+                  key={lead.id}
+                  lead={lead}
+                  accounts={accountsPage.items}
+                  contacts={contactsPage.items}
+                />
               ))
             )}
           </tbody>
