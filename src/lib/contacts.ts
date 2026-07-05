@@ -1,10 +1,15 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
 import { safeRevalidate } from './revalidate';
 import { prisma } from './db';
 import { contactInputSchema, type ContactInput } from './validators';
 import type { Paginated, ListFilters, Result } from './types';
 import type { Contact } from '@prisma/client';
+
+type ContactWithAccount = Prisma.ContactGetPayload<{
+  include: { account: { select: { id: true; name: true } } };
+}>;
 
 export async function createContact(input: ContactInput): Promise<Result<Contact>> {
   const p = contactInputSchema.safeParse(input);
@@ -25,7 +30,7 @@ export async function createContact(input: ContactInput): Promise<Result<Contact
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'unknown';
     if (msg.includes('Unique constraint') && msg.includes('email')) {
-      return { ok: false, fieldErrors: { email: ['Contact СЃ С‚Р°РєРёРј email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚'] } };
+      return { ok: false, fieldErrors: { email: ['Contact Р РЋР С“ Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР В РЎвЂР В РЎВ email Р РЋРЎвЂњР В Р’В¶Р В Р’Вµ Р РЋР С“Р РЋРЎвЂњР РЋРІР‚В°Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р В Р вЂ Р РЋРЎвЂњР В Р’ВµР РЋРІР‚С™'] } };
     }
     return { ok: false, message: msg };
   }
@@ -52,7 +57,7 @@ export async function updateContact(id: string, input: ContactInput): Promise<Re
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'unknown';
     if (msg.includes('Unique constraint') && msg.includes('email')) {
-      return { ok: false, fieldErrors: { email: ['Contact СЃ С‚Р°РєРёРј email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚'] } };
+      return { ok: false, fieldErrors: { email: ['Contact Р РЋР С“ Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР В РЎвЂР В РЎВ email Р РЋРЎвЂњР В Р’В¶Р В Р’Вµ Р РЋР С“Р РЋРЎвЂњР РЋРІР‚В°Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р В Р вЂ Р РЋРЎвЂњР В Р’ВµР РЋРІР‚С™'] } };
     }
     return { ok: false, message: msg };
   }
@@ -70,7 +75,7 @@ export async function getContact(id: string) {
 
 export async function getContacts(
   f: ListFilters & { accountId?: string } = {}
-): Promise<Paginated<Contact>> {
+): Promise<Paginated<ContactWithAccount>> {
   const { q, accountId, page = 1, limit = 50 } = f;
   const andClauses: Record<string, unknown>[] = [];
   if (q) {
@@ -89,6 +94,7 @@ export async function getContacts(
       orderBy: { name: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
+      include: { account: { select: { id: true, name: true } } },
     }),
     prisma.contact.count({ where }),
   ]);

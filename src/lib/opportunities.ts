@@ -1,5 +1,6 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
 import { safeRevalidate } from './revalidate';
 import { prisma } from './db';
 import {
@@ -8,6 +9,15 @@ import {
 } from './validators';
 import type { Paginated, ListFilters, Result } from './types';
 import type { Opportunity } from '@prisma/client';
+
+type OpportunityWithRefs = Prisma.OpportunityGetPayload<{
+  include: {
+    stage: true;
+    account: { select: { id: true; name: true } };
+    contact: { select: { id: true; name: true } };
+    _count: { select: { activities: true } };
+  };
+}>;
 
 export async function createOpportunity(input: OpportunityInput): Promise<Result<Opportunity>> {
   const p = opportunityInputSchema.safeParse(input);
@@ -64,7 +74,7 @@ export async function getOpportunity(id: string) {
 
 export async function getOpportunities(
   f: ListFilters & { stageId?: string; status?: string } = {}
-): Promise<Paginated<Opportunity>> {
+): Promise<Paginated<OpportunityWithRefs>> {
   const { q, stageId, status, page = 1, limit = 50 } = f;
   const andClauses: Record<string, unknown>[] = [];
   if (q) {
@@ -80,7 +90,12 @@ export async function getOpportunities(
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
-      include: { stage: true, _count: { select: { activities: true } } },
+      include: {
+        stage: true,
+        account: { select: { id: true, name: true } },
+        contact: { select: { id: true, name: true } },
+        _count: { select: { activities: true } },
+      },
     }),
     prisma.opportunity.count({ where }),
   ]);
@@ -92,5 +107,5 @@ export async function updateOpportunityStage(
   _newStageId: string,
   _reasonLost?: string
 ): Promise<Result<Opportunity>> {
-  throw new Error('updateOpportunityStage: РїРѕР»РЅР°СЏ СЂРµР°Р»РёР·Р°С†РёСЏ РІ phase-9-funnel.md (РїСЂР°РІРёР»Р° won/lost)');
+  throw new Error('updateOpportunityStage: Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р вЂ¦Р В Р’В°Р РЋР РЏ Р РЋР вЂљР В Р’ВµР В Р’В°Р В Р’В»Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ Р В Р вЂ  phase-9-funnel.md (Р В РЎвЂ”Р РЋР вЂљР В Р’В°Р В Р вЂ Р В РЎвЂР В Р’В»Р В Р’В° won/lost)');
 }
