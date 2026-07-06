@@ -12,10 +12,11 @@
 2. **TaskCheckbox с `useState(serverDone)`** + `useOptimistic(serverDone)`: state `serverDone` хранит подтверждённое значение; `useOptimistic` даёт мгновенный апдейт, откат при ошибке (React автоматически откатывает `useOptimistic` к `serverDone` когда `useTransition` завершается без revalidate).
 3. **ActivityTimeline** с `border-l-4` Tailwind классами вместо inline `style={{ borderLeft }}`; с явными лейблами **«✎ note»** / **«✓ task»** (вместо одной иконки `✓`/`✎`).
 4. **ActivityForm с toggle note/task** (кнопки «+ note» / «+ task» открывают форму) вместо `<select>` типа.
-5. **Drawer через React Portal** в `document.body` — обязательно, иначе `<div>` Drawer нельзя вложить в `<tr>` таблицы (hydration error). Drawer-обёртка используется с фазы 7.
-6. **RowWithDrawer-паттерн** (фазы 7–10): intercepted-routes Next.js 16 нестабильны в dev, поэтому таблицы используют client-side state (`<tr onClick={() => setOpen(true)}>` + `e.preventDefault()` на `<Link>`). URL не меняется при открытии Drawer — таблица остаётся видимой. Direct URL `/<entity>/<id>` через `app/<entity>/[id]/page.tsx` + `CardOverlayWrapper` (для refresh/share-link).
-7. **CardOverlayWrapper** для full-page версий: серверная страница `<entity>/[id]/page.tsx` оборачивает контент в Drawer через client `CardOverlayWrapper`, который открывается сразу и закрывается через `router.push(listPath)`. Не использует parallel routes / `@modal` slot.
-8. **toggleActivityDone** возвращает `{ ok: true, data: activity }` где `activity` — это полный Activity (с `opportunityId`); server action `revalidatePath` через `safeRevalidate` (без ошибок в smoke-тестах вне Next runtime).
+5. **Drawer через React Portal** в `document.body` — обязательно для overlay поверх контента. Drawer — client-компонент с `mounted`-gate (SSR возвращает null, mount рендерит Portal). Используется с фазы 7.
+6. **~~RowWithDrawer-паттерн~~ (7.1 — УДАЛЕНО в 7.2):** фаза 7.1 заменяла intercepting routes на client-side state (`<tr onClick>` + `e.preventDefault()` на `<Link>`, URL не менялся). **Откатано в 7.2** — см. п.9.
+7. **~~CardOverlayWrapper~~ (7.1 — УДАЛЕНО в 7.2):** фаза 7.1 оборачивала full-page карточку в client `CardOverlayWrapper` (Drawer открывался сразу, закрытие → `router.push(listPath)`). **Откатано в 7.2** — см. п.9.
+8. **toggleActivityDone** возвращает `{ ok: true, data: activity }` где `activity` — полный Activity (с `opportunityId`); server action `revalidatePath` через `safeRevalidate` (без ошибок в smoke вне Next runtime).
+9. **Intercepting Routes (7.2 — ФИНАЛЬНАЯ архитектура):** `@modal/(.)<entity>/[id]/page.tsx` перехватывает навигацию со списка → Drawer overlay (URL меняется на `/<entity>/<id>`). Root `layout.tsx` принимает parallel slot `{ modal }`. Списки рендерят обычные `<tr>` + `<Link href="/<entity>/<id>">` (без `e.preventDefault`). Full-page `app/<entity>/[id]/page.tsx` рендерит `<XCard>` напрямую в `<main>` (для refresh/share-link). **E2E Playwright (2026-07-06, 15/15 pass)** подтвердил: `useOptimistic` + `revalidatePath` совместимы с Intercepting Routes в Next.js 16.2.10 (Turbopack) — Drawer НЕ закрывается после toggle task. **M3 fix:** `TaskCheckbox` добавлен `useEffect(() => setServerDone(done), [done])` для синхронизации с server props после revalidation.
 
 ## 1. Zod-схема `toggleDoneSchema` (D3, A15)
 
@@ -173,7 +174,7 @@ export function ActivityTimeline({ activities }: Props) {
 ```tsx
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
+import { useOptimistic, useState, useTransition, useEffect } from 'react';
 import { toggleActivityDone } from '@/lib/activities';
 
 type Props = {
@@ -186,6 +187,11 @@ export function TaskCheckbox({ id, done }: Props) {
   // optimisticDone — мгновенный апдейт, откатывается к serverDone
   // при ошибке useTransition.
   const [serverDone, setServerDone] = useState(done);
+  // M3 fix: синхронизация с server props после revalidation
+  // (без этого serverDone "застревает" на начальном значении).
+  useEffect(() => {
+    setServerDone(done);
+  }, [done]);
   const [optimisticDone, setOptimisticDone] = useOptimistic<boolean, boolean>(
     serverDone,
     (_state, newValue) => newValue,
@@ -296,83 +302,109 @@ return createPortal(
 
 Причина: `<tr><Drawer/></tr>` — invalid HTML (только `<td>`/`<th>` могут быть детьми `<tr>`). Portal обходит это, рендерит Drawer в `document.body`.
 
-## 7. RowWithDrawer-паттерн (фазы 7–10)
+## 7. Intercepting Routes — архитектура Drawer (7.2, финальная)
 
-`src/components/{Lead,Account,Contact,Opportunity}RowWithDrawer.tsx`:
+### 7.1 Root layout — parallel slot `@modal`
+
+`src/app/layout.tsx` (header навигации сохранён, добавлен только slot):
 
 ```tsx
-'use client';
-
-import { useState } from 'react';
-import Link from 'next/link';
-import { Drawer } from './Drawer';
-import { DrawerHeader } from './DrawerHeader';
-// ... форма
-
-export function LeadRowWithDrawer({ lead, accounts, contacts }) {
-  const [open, setOpen] = useState(false);
+export default function RootLayout({
+  children,
+  modal,
+}: Readonly<{ children: ReactNode; modal: ReactNode }>) {
   return (
-    <>
-      <tr
-        className="cursor-pointer hover:bg-zinc-50"
-        onClick={() => setOpen(true)}
-      >
-        <td>
-          <Link
-            href={`/leads/${lead.id}`}
-            onClick={(e) => { e.preventDefault(); setOpen(true); }}
-          >
-            {lead.name}
-          </Link>
-        </td>
-        ...
-      </tr>
-      {open && (
-        <Drawer onClose={() => setOpen(false)}>
-          <DrawerHeader entity="lead" title={lead.name} ... />
-          <LeadForm lead={lead} accounts={accounts} contacts={contacts} />
-          <ConvertLeadAccordion ... />
-        </Drawer>
-      )}
-    </>
+    <html lang="ru" ...>
+      <body ...>
+        <header>...nav...</header>
+        <main className="min-h-[calc(100vh-57px)]">{children}</main>
+        {modal}
+      </body>
+    </html>
   );
 }
 ```
 
-`<Link onClick={e.preventDefault()}>` — блокирует Next.js navigation, не меняет URL. `<tr onClick={...}>` — открывает Drawer. **URL остаётся `/leads`** → таблица остаётся видимой под Drawer overlay.
+### 7.2 Intercepting route — `@modal/(.)<entity>/[id]/page.tsx`
 
-## 8. CardOverlayWrapper для direct URL (`/<entity>/<id>`)
-
-`src/components/CardOverlayWrapper.tsx`:
+Маркер `(.)` (same level) — `@modal` и `<entity>` оба на корневом уровне `app/`. Next.js 16 не поддерживает `(..)` на root level.
 
 ```tsx
-'use client';
+import { notFound } from 'next/navigation';
+import { getOpportunity } from '@/lib/opportunities';
+import { getStages } from '@/lib/stages';
+import { Drawer } from '@/components/Drawer';
+import { OpportunityCard } from '@/components/OpportunityCard';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Drawer } from './Drawer';
-
-export function CardOverlayWrapper({ children, listPath }: { children: ReactNode; listPath: string }) {
-  const [open, setOpen] = useState(true);
-  const router = useRouter();
-
-  function close(): void {
-    setOpen(false);
-    setTimeout(() => { router.push(listPath); }, 0);
-  }
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent): void { if (e.key === 'Escape') close(); }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  if (!open) return null;
-  return <Drawer onClose={close}>{children}</Drawer>;
+export default async function InterceptedOpportunityDrawer({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [opp, stages] = await Promise.all([getOpportunity(id), getStages()]);
+  if (!opp) notFound();
+  return (
+    <Drawer>
+      <OpportunityCard opportunity={opp} stages={stages} />
+    </Drawer>
+  );
 }
 ```
 
-Используется в `app/<entity>/[id]/page.tsx` — для refresh/share-link. Закрытие = `router.push(listPath)` → возврат на список.
+**Ключевое:** `OpportunityCard` уже содержит DrawerHeader + StageProgressBar + OpportunityForm + ActivityForm + ActivityTimeline (фазы 9-10). Intercepting route просто оборачивает его в `<Drawer>`.
+
+`@modal/default.tsx` возвращает `null` (Drawer не активен, когда нет перехваченной навигации).
+
+### 7.3 Список — обычные `<tr>` + `<Link>`
+
+```tsx
+// src/app/opportunities/page.tsx (tbody)
+items.map((opp) => (
+  <tr key={opp.id} className="border-t border-zinc-100 ...">
+    <td className="px-3 py-2">
+      <Link href={`/opportunities/${opp.id}`} className="hover:text-indigo-600 ...">
+        {opp.title}
+      </Link>
+    </td>
+    ...
+  </tr>
+))
+```
+
+Клик по `<Link>` → Next.js client-side navigation → `@modal/(.)opportunities/[id]` перехватывает → Drawer overlay. URL меняется на `/opportunities/<id>`. Список остаётся видным под overlay.
+
+## 8. Full-page — `app/<entity>/[id]/page.tsx` (refresh/share-link)
+
+```tsx
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { getOpportunity } from '@/lib/opportunities';
+import { getStages } from '@/lib/stages';
+import { OpportunityCard } from '@/components/OpportunityCard';
+
+export default async function OpportunityFullPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [opp, stages] = await Promise.all([getOpportunity(id), getStages()]);
+  if (!opp) notFound();
+  return (
+    <main className="p-6 max-w-4xl mx-auto">
+      <Link href="/opportunities" className="text-sm text-indigo-600 hover:underline">
+        ← К списку сделок
+      </Link>
+      <div className="mt-4 rounded border border-zinc-200 ... overflow-hidden">
+        <OpportunityCard opportunity={opp} stages={stages} />
+      </div>
+    </main>
+  );
+}
+```
+
+Direct URL / refresh → canonical route (не intercepting) → full page без Drawer overlay. Закрытие через «← К списку» или `router.back()`.
 
 ## 9. Тест-критерии (K20 — `curl` + JSON + ручная проверка UI)
 
@@ -439,17 +471,27 @@ m();
 
 - **Кодировка файлов:** Windows-CP1252 vs UTF-8. Файлы кириллицей сохранять в UTF-8 (write-tool делает это корректно; `Out-File -Encoding utf8` без BOM повреждает байты).
 - **Drawer и hydration:** при изменении Drawer в Next.js dev возможны warning'и о mismatched class names; это нормально, продакшн-сборка чище.
-- **React Portal + серверный Drawer:** Server Components не могут рендерить Portal. Если нужен Drawer в server component — оборачивать в client `CardOverlayWrapper`.
+- **React Portal + серверный Drawer:** Server Components не могут рендерить Portal напрямую. Intercepting route `@modal/(.)<entity>/[id]/page.tsx` — server component, который импортирует `<Drawer>` (client, с `mounted`-gate: SSR → null, mount → Portal). Это работает: server page рендерит `<Drawer>` в RSC payload, клиент хайдратирует его и монтирует Portal.
 
 ## 11. Коммит после фазы
 
 ```bash
+# Фазы 7-10 (исходный коммит)
 git add src/lib/activities.ts src/lib/validators.ts \
         src/components/ActivityTimeline.tsx src/components/ActivityForm.tsx src/components/TaskCheckbox.tsx \
         src/components/Drawer.tsx src/components/DrawerHeader.tsx \
-        src/components/LeadRowWithDrawer.tsx src/components/AccountRowWithDrawer.tsx \
-        src/components/ContactRowWithDrawer.tsx src/components/OpportunityRowWithDrawer.tsx \
-        src/components/CardOverlayWrapper.tsx \
-        src/app/{leads,accounts,contacts,opportunities}/page.tsx
-git commit -m "feat(phase 7-10): Drawer, RowWithDrawer pattern, Optimistic UI timeline (D3/D4 + A15)"
+        src/app/layout.tsx \
+        src/app/@modal/ \
+        src/app/{leads,accounts,contacts,opportunities}/{page.tsx,[id]/page.tsx}
+git commit -m "feat(phase 7-10): Intercepting Routes Drawer, Optimistic UI timeline (D3/D4 + A15)"
+
+# 7.2 — revert к Intercepting Routes + баг-фиксы C2/M3
+git add src/app/@modal/ src/app/layout.tsx \
+        src/app/{leads,accounts,contacts,opportunities}/{page.tsx,[id]/page.tsx} \
+        src/components/StageProgressBar.tsx src/components/TaskCheckbox.tsx \
+        src/lib/opportunities.ts src/lib/types.ts
+# удалённые файлы:
+#   src/components/{Lead,Account,Contact,Opportunity}RowWithDrawer.tsx
+#   src/components/CardOverlayWrapper.tsx
+git commit -m "fix(architecture): revert to Intercepting Routes + keep phases 9-10 + C2/M3"
 ```
