@@ -1,3 +1,10 @@
+import {
+  leadSourceLabel,
+  leadStatusLabel,
+  opportunityStatusLabel,
+  stageLabel,
+} from '@/lib/labels';
+
 type Variant =
   | 'won'
   | 'lost'
@@ -13,6 +20,15 @@ type Variant =
   | 'qualification'
   | 'proposal'
   | 'negotiation';
+
+type Kind = 'source' | 'leadStatus' | 'oppStatus' | 'stage';
+
+const LABEL_FN: Record<Kind, (v: string) => string> = {
+  source: leadSourceLabel,
+  leadStatus: leadStatusLabel,
+  oppStatus: opportunityStatusLabel,
+  stage: stageLabel,
+};
 
 const COLORS: Record<Variant, { bg: string; fg: string; border: string }> = {
   won:           { bg: 'bg-emerald-100 dark:bg-emerald-950/40', fg: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-800' },
@@ -31,13 +47,26 @@ const COLORS: Record<Variant, { bg: string; fg: string; border: string }> = {
   negotiation:   { bg: 'bg-cyan-100 dark:bg-cyan-950/40',       fg: 'text-cyan-700 dark:text-cyan-300',       border: 'border-cyan-300 dark:border-cyan-800' },
 };
 
-export function Badge({ variant, children }: { variant: Variant; children: React.ReactNode }) {
+export function Badge({
+  variant,
+  kind,
+  value,
+  children,
+}: {
+  variant: Variant;
+  kind?: Kind;
+  value?: string;
+  children?: React.ReactNode;
+}) {
   const c = COLORS[variant];
+  const rawValue = value ?? (typeof children === 'string' ? children : '');
+  const displayText = kind && rawValue ? LABEL_FN[kind](rawValue) : children;
   return (
     <span
+      title={rawValue}
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${c.bg} ${c.fg} ${c.border}`}
     >
-      {children}
+      {displayText}
     </span>
   );
 }

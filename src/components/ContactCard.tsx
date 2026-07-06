@@ -2,6 +2,7 @@ import { DrawerHeader } from './DrawerHeader';
 import { ContactForm } from './ContactForm';
 import type { Account, Contact, Opportunity } from '@prisma/client';
 import Link from 'next/link';
+import { stageLabel } from '@/lib/labels';
 
 type ContactFull = Contact & {
   account: Account | null;
@@ -52,7 +53,7 @@ export function ContactCard({ contact }: { contact: ContactFull }) {
                 >
                   {o.title}
                 </Link>
-                <span className="text-zinc-500 dark:text-zinc-400"> · {o.stage.name}</span>
+                <span className="text-zinc-500 dark:text-zinc-400" title={o.stage.name}> · {stageLabel(o.stage.name)}</span>
               </li>
             ))}
           </ul>

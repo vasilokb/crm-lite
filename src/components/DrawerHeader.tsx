@@ -1,16 +1,20 @@
 import { Badge } from './Badge';
 import { DrawerCloseButton } from './DrawerCloseButton';
 
+type StatusKind = 'leadStatus' | 'oppStatus';
+
 export function DrawerHeader({
   entity,
   title,
   status,
+  statusKind,
   source,
   stage,
 }: {
   entity: 'lead' | 'account' | 'contact' | 'opportunity';
   title: string;
   status?: string;
+  statusKind?: StatusKind;
   source?: string;
   stage?: string;
 }) {
@@ -32,13 +36,17 @@ export function DrawerHeader({
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           {status && (
-            <Badge variant={status as never}>{status}</Badge>
+            <Badge
+              kind={statusKind ?? 'oppStatus'}
+              variant={status as never}
+              value={status}
+            />
           )}
           {source && (
-            <Badge variant={source as never}>{source}</Badge>
+            <Badge kind="source" variant={source as never} value={source} />
           )}
           {stage && (
-            <Badge variant={stage as never}>{stage}</Badge>
+            <Badge kind="stage" variant={stage as never} value={stage} />
           )}
         </div>
       </div>

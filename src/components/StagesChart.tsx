@@ -23,9 +23,10 @@ ChartJS.register(
 type Props = {
   labels: string[];
   values: number[];
+  rawLabels?: string[];
 };
 
-export function StagesChart({ labels, values }: Props) {
+export function StagesChart({ labels, values, rawLabels }: Props) {
   const data = {
     labels,
     datasets: [
@@ -57,6 +58,16 @@ export function StagesChart({ labels, values }: Props) {
     plugins: {
       legend: { display: false },
       title: { display: true, text: 'Сделки по стадиям воронки' },
+      tooltip: {
+        callbacks: {
+          title: (items: { dataIndex: number }[]) => {
+            const idx = items[0].dataIndex;
+            const ru = labels[idx];
+            const en = rawLabels?.[idx];
+            return en ? `${ru} (${en})` : ru;
+          },
+        },
+      },
     },
     layout: {
       padding: { top: 8, bottom: 0, left: 0, right: 0 },

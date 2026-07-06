@@ -47,6 +47,7 @@ export function LeadCard({
         entity="lead"
         title={lead.name}
         status={lead.status}
+        statusKind="leadStatus"
         source={lead.source}
       />
 

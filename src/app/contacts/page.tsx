@@ -5,6 +5,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateContactForm } from '@/components/CreateContactForm';
+import { TABLE_HEADERS } from '@/lib/labels';
 
 type SP = { q?: string; accountId?: string; page?: string };
 
@@ -47,10 +48,10 @@ export default async function ContactsPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
-              <th className="px-3 py-2 font-medium">Имя</th>
-              <th className="px-3 py-2 font-medium">Email</th>
-              <th className="px-3 py-2 font-medium">Телефон</th>
-              <th className="px-3 py-2 font-medium">Компания</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.name}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.email}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.phone}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.company}</th>
             </tr>
           </thead>
           <tbody>

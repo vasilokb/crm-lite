@@ -4,6 +4,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateAccountForm } from '@/components/CreateAccountForm';
+import { TABLE_HEADERS } from '@/lib/labels';
 
 type SP = { q?: string; page?: string };
 
@@ -39,10 +40,10 @@ export default async function AccountsPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
-              <th className="px-3 py-2 font-medium">Имя</th>
-              <th className="px-3 py-2 font-medium">Сайт</th>
-              <th className="px-3 py-2 font-medium">Контакты</th>
-              <th className="px-3 py-2 font-medium">Сделки</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.name}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.website}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.contacts}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.opportunities}</th>
             </tr>
           </thead>
           <tbody>

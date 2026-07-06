@@ -3,6 +3,7 @@ import { DrawerRelatedList } from './DrawerRelatedList';
 import { AccountForm } from './AccountForm';
 import type { Account, Contact, Opportunity } from '@prisma/client';
 import Link from 'next/link';
+import { stageLabel } from '@/lib/labels';
 
 type AccountFull = Account & {
   contacts: Contact[];
@@ -72,8 +73,8 @@ export function AccountCard({ account }: { account: AccountFull }) {
                 >
                   {o.title}
                 </Link>
-                <span className="text-zinc-500 dark:text-zinc-400">
-                  {' '}· {o.stage.name} ·{' '}
+                <span className="text-zinc-500 dark:text-zinc-400" title={o.stage.name}>
+                  {' '}· {stageLabel(o.stage.name)} ·{' '}
                   {o.amount
                     ? new Intl.NumberFormat('ru-RU').format(o.amount) + ' ₽'
                     : '—'}

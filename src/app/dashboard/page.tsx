@@ -49,12 +49,14 @@ export default async function DashboardPage() {
         <div className="rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 h-72">
           <StagesChart
             labels={data.stagesChart.labels}
+            rawLabels={data.stagesChart.rawLabels}
             values={data.stagesChart.values}
           />
         </div>
         <div className="rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 h-72">
           <LeadsChart
             labels={data.leadsChart.labels}
+            rawLabels={data.leadsChart.rawLabels}
             values={data.leadsChart.values}
           />
         </div>
@@ -70,6 +72,7 @@ export default async function DashboardPage() {
             {data.leadsStatusSummary.map((s) => (
               <li
                 key={s.label}
+                title={s.value}
                 className="flex justify-between text-sm"
               >
                 <span className="text-zinc-600 dark:text-zinc-400">
@@ -90,6 +93,7 @@ export default async function DashboardPage() {
             {data.leadsSourceSummary.map((s) => (
               <li
                 key={s.label}
+                title={s.value}
                 className="flex justify-between text-sm"
               >
                 <span className="text-zinc-600 dark:text-zinc-400">

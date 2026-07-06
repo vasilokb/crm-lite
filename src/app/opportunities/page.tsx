@@ -8,21 +8,26 @@ import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateOpportunityForm } from '@/components/CreateOpportunityForm';
 import { Badge } from '@/components/Badge';
+import {
+  TABLE_HEADERS,
+  stageLabel,
+  opportunityStatusLabel,
+} from '@/lib/labels';
 
 type SP = { q?: string; stage?: string; status?: string; page?: string };
 
 const STAGE_OPTIONS = [
-  { value: 'qualification', label: 'Квалификация' },
-  { value: 'proposal',      label: 'Предложение' },
-  { value: 'negotiation',   label: 'Переговоры' },
-  { value: 'won',           label: 'Победа' },
-  { value: 'lost',          label: 'Отказ' },
+  { value: 'qualification', label: stageLabel('qualification') },
+  { value: 'proposal',      label: stageLabel('proposal') },
+  { value: 'negotiation',   label: stageLabel('negotiation') },
+  { value: 'won',           label: stageLabel('won') },
+  { value: 'lost',          label: stageLabel('lost') },
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'open', label: 'Открыта' },
-  { value: 'won',  label: 'Выиграна' },
-  { value: 'lost', label: 'Проиграна' },
+  { value: 'open', label: opportunityStatusLabel('open') },
+  { value: 'won',  label: opportunityStatusLabel('won') },
+  { value: 'lost', label: opportunityStatusLabel('lost') },
 ];
 
 function formatAmount(value: number | null): string {
@@ -85,12 +90,12 @@ export default async function OpportunitiesPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
-              <th className="px-3 py-2 font-medium">Название</th>
-              <th className="px-3 py-2 font-medium text-right">Сумма</th>
-              <th className="px-3 py-2 font-medium">Стадия</th>
-              <th className="px-3 py-2 font-medium">Статус</th>
-              <th className="px-3 py-2 font-medium">Компания</th>
-              <th className="px-3 py-2 font-medium">Контакт</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.title}</th>
+              <th className="px-3 py-2 font-medium text-right">{TABLE_HEADERS.opportunities.amount}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.stage}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.status}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.company}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.contact}</th>
             </tr>
           </thead>
           <tbody>
@@ -113,12 +118,14 @@ export default async function OpportunitiesPage({
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatAmount(opp.amount)}</td>
                   <td className="px-3 py-2">
-                    <Badge variant={opp.stage.name as 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'}>
-                      {opp.stage.name}
-                    </Badge>
+                    <Badge
+                      kind="stage"
+                      variant={opp.stage.name as 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'}
+                      value={opp.stage.name}
+                    />
                   </td>
                   <td className="px-3 py-2">
-                    <Badge variant={opp.status}>{opp.status}</Badge>
+                    <Badge kind="oppStatus" variant={opp.status} value={opp.status} />
                   </td>
                   <td className="px-3 py-2">{opp.account?.name ?? '—'}</td>
                   <td className="px-3 py-2">{opp.contact?.name ?? '—'}</td>

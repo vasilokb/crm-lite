@@ -1,5 +1,6 @@
 import type { Activity } from '@prisma/client';
 import { TaskCheckbox } from './TaskCheckbox';
+import { activityTypeLabel } from '@/lib/labels';
 
 type Props = {
   activities: Activity[];
@@ -65,8 +66,11 @@ export function ActivityTimeline({ activities }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="inline-flex items-center rounded-full bg-white/70 px-2 py-0.5 font-medium uppercase tracking-wide text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300">
-                    {isNote ? '✎ note' : '✓ task'}
+                  <span
+                    title={isNote ? 'note' : 'task'}
+                    className="inline-flex items-center rounded-full bg-white/70 px-2 py-0.5 font-medium uppercase tracking-wide text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300"
+                  >
+                    {isNote ? '✎ ' + activityTypeLabel('note') : '✓ ' + activityTypeLabel('task')}
                   </span>
                   {!isNote && a.dueDate && (
                     <span

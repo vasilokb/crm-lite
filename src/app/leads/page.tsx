@@ -7,6 +7,11 @@ import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/Badge';
 import { CreateLeadForm } from '@/components/CreateLeadForm';
+import {
+  TABLE_HEADERS,
+  leadSourceLabel,
+  leadStatusLabel,
+} from '@/lib/labels';
 
 type SP = { q?: string; source?: string; status?: string; page?: string };
 
@@ -48,19 +53,19 @@ export default async function LeadsPage({
             {
               name: 'source', label: 'Источник',
               options: [
-                { value: 'site',     label: 'Сайт' },
-                { value: 'email',    label: 'Email' },
-                { value: 'phone',    label: 'Телефон' },
-                { value: 'referral', label: 'Рекомендация' },
-                { value: 'manual',   label: 'Вручную' },
+                { value: 'site',     label: leadSourceLabel('site') },
+                { value: 'email',    label: leadSourceLabel('email') },
+                { value: 'phone',    label: leadSourceLabel('phone') },
+                { value: 'referral', label: leadSourceLabel('referral') },
+                { value: 'manual',   label: leadSourceLabel('manual') },
               ],
             },
             {
               name: 'status', label: 'Статус',
               options: [
-                { value: 'new',       label: 'Новая' },
-                { value: 'processed', label: 'В работе' },
-                { value: 'converted', label: 'Конвертирована' },
+                { value: 'new',       label: leadStatusLabel('new') },
+                { value: 'processed', label: leadStatusLabel('processed') },
+                { value: 'converted', label: leadStatusLabel('converted') },
               ],
             },
           ]}
@@ -74,11 +79,11 @@ export default async function LeadsPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
-              <th className="px-3 py-2 font-medium">Имя</th>
-              <th className="px-3 py-2 font-medium">Source</th>
-              <th className="px-3 py-2 font-medium">Статус</th>
-              <th className="px-3 py-2 font-medium">Компания</th>
-              <th className="px-3 py-2 font-medium">Создан</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.name}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.source}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.status}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.company}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.created}</th>
             </tr>
           </thead>
           <tbody>
@@ -100,10 +105,10 @@ export default async function LeadsPage({
                     </Link>
                   </td>
                   <td className="px-3 py-2">
-                    <Badge variant={lead.source}>{lead.source}</Badge>
+                    <Badge kind="source" variant={lead.source} value={lead.source} />
                   </td>
                   <td className="px-3 py-2">
-                    <Badge variant={lead.status}>{lead.status}</Badge>
+                    <Badge kind="leadStatus" variant={lead.status} value={lead.status} />
                   </td>
                   <td className="px-3 py-2">{lead.company ?? '—'}</td>
                   <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">

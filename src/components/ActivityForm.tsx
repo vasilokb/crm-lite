@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { createActivity } from '@/lib/activities';
+import { activityTypeLabel } from '@/lib/labels';
 
 type Props = {
   opportunityId: string;
@@ -67,7 +68,7 @@ export function ActivityForm({ opportunityId }: Props) {
           }}
           className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
-          + note
+          + {activityTypeLabel('note')}
         </button>
         <button
           type="button"
@@ -77,7 +78,7 @@ export function ActivityForm({ opportunityId }: Props) {
           }}
           className="rounded border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
         >
-          + task
+          + {activityTypeLabel('task')}
         </button>
       </div>
     );

@@ -14,9 +14,10 @@ ChartJS.register(ArcElement, Title, Tooltip, Legend);
 type Props = {
   labels: string[];
   values: number[];
+  rawLabels?: string[];
 };
 
-export function LeadsChart({ labels, values }: Props) {
+export function LeadsChart({ labels, values, rawLabels }: Props) {
   const data = {
     labels,
     datasets: [
@@ -44,6 +45,16 @@ export function LeadsChart({ labels, values }: Props) {
     plugins: {
       legend: { position: 'bottom' as const },
       title: { display: true, text: 'Лиды по статусам' },
+      tooltip: {
+        callbacks: {
+          title: (items: { dataIndex: number }[]) => {
+            const idx = items[0].dataIndex;
+            const ru = labels[idx];
+            const en = rawLabels?.[idx];
+            return en ? `${ru} (${en})` : ru;
+          },
+        },
+      },
     },
     layout: {
       padding: { top: 8, bottom: 0, left: 0, right: 0 },

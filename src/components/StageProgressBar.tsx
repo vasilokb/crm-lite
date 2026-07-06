@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOpportunityStage } from '@/lib/opportunities';
 import type { Stage } from '@prisma/client';
+import { stageLabel } from '@/lib/labels';
 
 type Props = {
   opportunityId: string;
@@ -105,6 +106,7 @@ export function StageProgressBar({
                 type="button"
                 onClick={() => handleStageClick(stage)}
                 disabled={pending}
+                title={stage.name}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={[
                   'rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50',
@@ -115,7 +117,7 @@ export function StageProgressBar({
                     : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300',
                 ].join(' ')}
               >
-                {stage.name}
+                {stageLabel(stage.name)}
               </button>
               {i < stages.length - 1 && (
                 <div

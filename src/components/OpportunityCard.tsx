@@ -26,6 +26,7 @@ export function OpportunityCard({
         entity="opportunity"
         title={opportunity.title}
         status={opportunity.status}
+        statusKind="oppStatus"
         stage={opportunity.stage.name}
       />
 

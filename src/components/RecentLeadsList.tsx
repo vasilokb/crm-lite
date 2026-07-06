@@ -28,8 +28,8 @@ export function RecentLeadsList({ leads }: { leads: Lead[] }) {
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <Badge variant={l.source as 'site' | 'email' | 'phone' | 'referral' | 'manual'}>{l.source}</Badge>
-              <Badge variant={l.status as 'new' | 'processed' | 'converted'}>{l.status}</Badge>
+              <Badge kind="source" variant={l.source as 'site' | 'email' | 'phone' | 'referral' | 'manual'} value={l.source} />
+              <Badge kind="leadStatus" variant={l.status as 'new' | 'processed' | 'converted'} value={l.status} />
             </div>
           </Link>
         </li>

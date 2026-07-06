@@ -4,8 +4,8 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOpportunity } from '@/lib/opportunities';
 import type { Opportunity } from '@prisma/client';
+import { stageLabel, opportunityStatusLabel } from '@/lib/labels';
 
-const STAGE_OPTIONS = ['qualification', 'proposal', 'negotiation', 'won', 'lost'] as const;
 const STATUS_OPTIONS = ['open', 'won', 'lost'] as const;
 
 export function OpportunityForm({
@@ -71,7 +71,7 @@ export function OpportunityForm({
           className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
         >
           {stages.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
+            <option key={s.id} value={s.id}>{stageLabel(s.name)}</option>
           ))}
         </select>
       </label>
@@ -84,7 +84,7 @@ export function OpportunityForm({
           className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
         >
           {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{opportunityStatusLabel(s)}</option>
           ))}
         </select>
       </label>

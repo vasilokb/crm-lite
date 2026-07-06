@@ -1,4 +1,5 @@
 import { prisma } from './db';
+import { stageLabel, leadStatusLabel, leadSourceLabel } from './labels';
 
 /**
  * Агрегации для Dashboard.
@@ -46,7 +47,8 @@ export async function getDashboardData() {
     include: { _count: { select: { opportunities: true } } },
   });
   const stagesChart = {
-    labels: stages.map((s) => s.name),
+    labels: stages.map((s) => stageLabel(s.name)),
+    rawLabels: stages.map((s) => s.name),
     values: stages.map((s) => s._count.opportunities),
   };
 
@@ -56,15 +58,12 @@ export async function getDashboardData() {
     by: ['status'],
     _count: { _all: true },
   });
-  const statusOrder: { status: string; label: string }[] = [
-    { status: 'new', label: 'Новые' },
-    { status: 'processed', label: 'В работе' },
-    { status: 'converted', label: 'Конвертированы' },
-  ];
+  const statusOrder = ['new', 'processed', 'converted'] as const;
   const leadsChart = {
-    labels: statusOrder.map((s) => s.label),
+    labels: statusOrder.map((s) => leadStatusLabel(s)),
+    rawLabels: statusOrder.map((s) => s),
     values: statusOrder.map(
-      (s) => leadsByStatus.find((l) => l.status === s.status)?._count._all ?? 0,
+      (s) => leadsByStatus.find((l) => l.status === s)?._count._all ?? 0,
     ),
   };
 
@@ -72,8 +71,9 @@ export async function getDashboardData() {
 
   // Summary по статусам лидов (текстовый, не график)
   const leadsStatusSummary = statusOrder.map((s) => ({
-    label: s.label,
-    count: leadsByStatus.find((l) => l.status === s.status)?._count._all ?? 0,
+    label: leadStatusLabel(s),
+    value: s,
+    count: leadsByStatus.find((l) => l.status === s)?._count._all ?? 0,
   }));
 
   // Summary по источникам лидов (site/email/phone/referral/manual)
@@ -83,7 +83,8 @@ export async function getDashboardData() {
   });
   const sourceOrder = ['site', 'email', 'phone', 'referral', 'manual'];
   const leadsSourceSummary = sourceOrder.map((src) => ({
-    label: src,
+    label: leadSourceLabel(src),
+    value: src,
     count: leadsBySource.find((l) => l.source === src)?._count._all ?? 0,
   }));
 
