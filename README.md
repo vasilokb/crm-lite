@@ -1,5 +1,7 @@
 # CRM-lite — Агентство выставочных стендов
 
+https://crm-lite-azure.vercel.app/dashboard  <-- тут развернуто
+
 > Документ для ревьюера и для нового разработчика: что это за CRM, какой стек, какие правила, что входит в MVP и что нет.
 > Главный план — [`Plan.md`](Plan.md). Контракт MVP — [`docs/final-mvp.md`](docs/final-mvp.md) (ред. 7.0). Постановка задачи — [`docs/home-work.md`](docs/home-work.md).
 
