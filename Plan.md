@@ -50,7 +50,7 @@
 | 9. Воронка сделок: прогресс-бар + правила won/lost | [x] | [x] | 2026-07-05 — updateOpportunityStage полная реализация: won без amount/contact → отказ; lost без reasonLost → отказ; status↔stage синхронизированы (won/lost↔open) + closeDate; reasonLost сохраняется только при lost; StageProgressBar 5 шагов ↔ список, превентивные UX-проверки; CreateOpportunityForm на /opportunities; tsc exit 0; boundary-тесты pass. **2026-07-06 (C2 fix):** `{ok:false,error}` вместо `message` (5 строк в opportunities.ts + Result type + StageProgressBar.tsx); граничный тест won-без-amount → `{ok:false,error:'amount_required'}` |
 | 10. Активности: timeline + Optimistic UI для `done` | [x] | [x] | 2026-07-05 — TaskCheckbox с useOptimistic (React 19) + useTransition; ActivityTimeline: note/task визуально различимы (✎/✓), overdue подсвечены красным + «просрочено»; ActivityForm с toggle note/task (для task dueDate обязателен); Zod-toggle pass; tsc exit 0. **2026-07-06 (M3 fix):** `useEffect(() => setServerDone(done), [done])` в TaskCheckbox — синхронизация с server props после revalidation. **2026-07-06 (7.2):** E2E подтвердил useOptimistic + IR совместимость (toggle task в Drawer → Drawer не закрывается) |
 | 11. Dashboard: KPI + 2 Chart.js + операционные списки | [x] | [x] | 2026-07-06 — src/lib/dashboard.ts (4 KPI; stagesChart через Stage.findMany + _count, всегда 5 столбцов D5; openOpportunitiesAmount ?? 0 D6); 5 компонентов (KpiCard server, StagesChart/LeadsChart client «тупые», RecentLeadsList/OverdueTasksList server); Dashboard page заменил заглушку; revalidatePath('/dashboard') уже во всех 12 мутирующих actions (D13); npx tsc --noEmit exit 0 |
-| 12. Упаковка к сдаче: README, E2E-сценарий, TEST_REPORT.md | ☐ | ☐ | запуск → seed → лид → convert → сделка → активность → воронка → dashboard |
+| 12. Упаковка к сдаче: README, E2E-сценарий, TEST_REPORT.md | [x] | [x] | 2026-07-06 — README финализирован (Next.js 16.2.10, React 19.2.4, порт 3001, версии и Безопасное изменение схемы / Восстановление dev-data / Известные ограничения); TEST_REPORT.md создан (6 граничных кейсов pass + 13 шагов E2E + migrate status clean + build exit 0 + [DELIVERED] плейсхолдер); 0 багов |
 
 **Правило обновления:** после Test-критерия, прошедшего проверку, — отметить `[x]`. Если нет — добавить «⚠ <дата>: <что не прошло>» в «Комментарий» и/или скорректировать следующие шаги.
 
@@ -453,23 +453,10 @@ home-work/
 
 ### TODO (после фазы 11) — обновить документацию под фактическую архитектуру Drawer
 
-Архитектура реализована через Intercepting Routes (работает), но документация ещё описывает старый client-side workaround. Обновить после фазы 11:
+**Статус 2026-07-06 (фаза 12):** **отложено, не блокирует сдачу.** Архитектура реализована через Intercepting Routes и подтверждена E2E Playwright (15/15) в фазе 7.2; Optimistic UI + IR совместимы (фаза 10). README.md и TEST_REPORT.md описывают фактическое поведение (URL-driven, intercepted overlay из списка, full-page по direct URL, маркер `(.)`, DrawerContext). Мини-планы (phase-7-drawers.md, phase-5-backend.md, phase-12-testing.md) содержат устаревшие ссылки на client-side workaround — при необходимости правятся отдельной фазой 13+.
 
-1. §6.7 — переписать под Intercepting Routes + Portal + DrawerContext.
-2. §14 A9 — заменить «client-side overlay» на «Intercepting Routes (.) + React Portal + DrawerContext».
-3. docs/plans/phase-7-drawers.md — добавить секцию «0a. Фактическая реализация» (Portal, DrawerContext, (.), default.tsx, Card DRY).
-4. docs/plans/phase-12-testing.md §2 шаги 6, 8 — обновить под intercepting routes (URL меняется естественно, back через router.back() в Drawer).
-5. docs/plans/phase-5-backend.md — добавить заметку про safeRevalidate (обёртка над revalidatePath для smoke-тестов).
-
-Промпт для этих правок — сохранён в истории чата, применить после закрытия фазы 11.
-
----
-
-## 14. Допущения (assumptions)
-
-| # | Допущение | Что может оказаться неверным | Какие фазы править |
-|---|---|---|---|
-| A1 | `migrate dev` создаёт **новые** миграции при изменении схемы; `db:reset` пересоздаёт БД с нуля. Идемпотентность контрольных данных обеспечивает `seed.ts` через `upsert`, а не миграции | При первом запуске после изменения `schema.prisma` нужно либо `db:reset`, либо `db:migrate` (создаст новую миграцию) | Фаза 4.5, шаг 12.4 — корректная последовательность: `db:reset` для dev-контура, `db:migrate` для эволюции схемы. Seed идемпотентен через `upsert` |
+Промпт для этих правок — сохранён в истории чата, применять НЕ требуется для сдачи.
+| A1 | migrate dev создаёт **новые** миграции при изменении схемы; db:reset пересоздаёт БД с нуля. Идемпотентность контрольных данных обеспечивает seed.ts через upsert, а не миграции | При первом запуске после изменения `schema.prisma` нужно либо `db:reset`, либо `db:migrate` (создаст новую миграцию) | Фаза 4.5, шаг 12.4 — корректная последовательность: `db:reset` для dev-контура, `db:migrate` для эволюции схемы. Seed идемпотентен через `upsert` |
 | A2 | Локальный PostgreSQL уже запущен у ревьюера на 5432 | Ревьюер работает на нестандартном порту или использует managed PostgreSQL | Фаза 2.7 (README) — добавить секцию «Как поднять PostgreSQL локально» |
 | A3 | `chart.js@4.5.1` и `react-chartjs-2@5.3.1` совместимы с React 19 | Если React 19 в Next 15 не совместим — нужна версия вниз | Фаза 2.4, фаза 11.3/11.4 |
 | A4 | `prisma-client-js` generator + `provider = "postgresql"` + `url = env("DATABASE_URL")` — стандартный Prisma 6-контур, **по определению работает без driver adapters**. `@prisma/adapter-pg`/`PrismaPg`/`prisma.config.ts` не требуются и явно запрещены final-mvp §1 | Если в Prisma 6.19.x обнаружится регрессия, нарушающая это — это будет breaking change самой Prisma, выход за рамки плана | Не править; при регрессии — зафиксировать в Plan.md §13 как блокер и сообщить пользователю |

@@ -15,18 +15,32 @@ CRM-lite — локальное однопользовательское веб-
 
 ## 1.2 Стек
 
-- **Next.js App Router** + React + TypeScript (strict) + Tailwind.
+- **Next.js 16.2.10 (App Router)** + **React 19.2.4** + **TypeScript** (strict) + **Tailwind v4**.
 - **PostgreSQL** + **Prisma 6.19.3** — `generator client { provider = "prisma-client-js" }`, `datasource db { provider = "postgresql"; url = env("DATABASE_URL") }` в `prisma/schema.prisma`. Версии в `package.json` фиксируются точно: `prisma@6.19.3`, `@prisma/client@6.19.3` (установка через `--save-exact`, без `^`/`~`).
 - **Запрещено:** `@prisma/adapter-pg`, `PrismaPg`, `prisma.config.ts` (требование [`docs/final-mvp.md`](docs/final-mvp.md) §2; в `package.json` ничего из этого быть не должно).
 - **Zod** — единый источник правил для server actions; серверная валидация обязательна, UI-валидация — только UX.
 - **chart.js@4.5.1** + **react-chartjs-2@5.3.1** — дашборд (версии зафиксированы).
 - **Локальный режим, без realtime** — Dashboard обновляется через повторный запрос при навигации; websockets, SSE, polling не используются.
 
+### Зафиксированные версии
+
+| Пакет | Версия | Где |
+|---|---|---|
+| next | 16.2.10 | dependency |
+| react | 19.2.4 | dependency |
+| react-dom | 19.2.4 | dependency |
+| prisma | 6.19.3 | devDependency |
+| @prisma/client | 6.19.3 | dependency |
+| chart.js | 4.5.1 | dependency |
+| react-chartjs-2 | 5.3.1 | dependency |
+| zod | ^3.25.76 | dependency |
+| tsx | ^4.23.0 | devDependency (для db:seed и smoke-тестов) |
+
 ## 1.3 Маршруты
 
 - `/dashboard` — KPI + 2 Chart.js-диаграммы + операционные списки.
 - `/leads`, `/accounts`, `/contacts`, `/opportunities` — табличные списки с пагинацией, поиском и фильтрами.
-- `/leads/[id]`, `/accounts/[id]`, `/contacts/[id]`, `/opportunities/[id]` — Drawer-карточки через **Next.js Intercepting Routes** (parallel slot `@modal` + `(..)<entity>/[id]`). Один активный Drawer; URL-driven, замена содержимого вместо наслоения; Back предсказуем (см. [`Plan.md`](Plan.md) §6.7, [`docs/final-mvp.md`](docs/final-mvp.md) §4–§5).
+- `/leads/[id]`, `/accounts/[id]`, `/contacts/[id]`, `/opportunities/[id]` — Drawer-карточки через **Next.js Intercepting Routes** (parallel slot `@modal` + `(.)<entity>/[id]`). Маркер `(.)` — корректно для Next.js 16.2.10: `@modal` и `<entity>` оба на root level, поэтому `(..)` невозможен. Один активный Drawer; URL-driven, замена содержимого вместо наслоения; Back предсказуем (см. [`Plan.md`](Plan.md) §6.7, [`docs/final-mvp.md`](docs/final-mvp.md) §4–§5).
 - `/` — редирект на `/dashboard`.
 
 ## 1.4 Как запустить
@@ -59,9 +73,9 @@ psql -d crm_dev -c "SELECT 1;"
 ```bash
 cp .env.example .env                # затем отредактируй .env, укажи реальный пароль
 npm install
-npm run db:migrate                  # применить схему (требует prisma/schema.prisma — фаза 3)
-npm run db:seed                     # контрольные данные 6/4/5/6/8 (требует prisma/seed.ts — фаза 4)
-npm run dev                         # http://localhost:3000  → редирект на /dashboard
+npm run db:migrate                  # применить схему + создать БД crm_dev
+npm run db:seed                     # контрольные данные 6/4/5/6/8
+npm run dev -- -p 3001              # http://localhost:3001 → редирект на /dashboard
 ```
 
 **Windows (PowerShell):**
@@ -71,10 +85,12 @@ Copy-Item .env.example .env          # затем отредактируй .env,
 npm install
 npm run db:migrate
 npm run db:seed
-npm run dev                          # http://localhost:3000 → редирект на /dashboard
+npm run dev -- -p 3001               # http://localhost:3001 → редирект на /dashboard
 ```
 
-> **Примечание:** `db:migrate` и `db:seed` заработают только после фаз 3 и 4 (появятся `prisma/schema.prisma` и `prisma/seed.ts`). На время фазы 2 достаточно того, что `.env.example`, `.gitignore`, точные версии и скрипты `db:*` зарегистрированы (см. [`docs/plans/phase-2-env.md`](docs/plans/phase-2-env.md) §6).
+> **Порт 3001 (не 3000)** — в рабочем окружении порт 3000 занят другим приложением, поэтому dev-сервер стартует на 3001. Чтобы использовать другой порт — замените `3001` на нужный. 
+> 
+> `npm run db:migrate` сам создаст БД `crm_dev` (если не существует) и применит все миграции из `prisma/migrations/`. `npm run db:seed` идемпотентен (повторный запуск не дублирует данные).
 
 ### Безопасное изменение схемы
 
