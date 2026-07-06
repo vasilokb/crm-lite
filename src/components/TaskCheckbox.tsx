@@ -1,6 +1,6 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
+import { useOptimistic, useState, useTransition, useEffect } from 'react';
 import { toggleActivityDone } from '@/lib/activities';
 
 type Props = {
@@ -17,6 +17,10 @@ export function TaskCheckbox({ id, done }: Props) {
   const [, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    setServerDone(done);
+  }, [done]);
 
   function handleToggle(): void {
     const next = !optimisticDone;

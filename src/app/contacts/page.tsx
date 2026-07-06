@@ -5,7 +5,6 @@ import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateContactForm } from '@/components/CreateContactForm';
-import { ContactRowWithDrawer } from '@/components/ContactRowWithDrawer';
 
 type SP = { q?: string; accountId?: string; page?: string };
 
@@ -62,7 +61,21 @@ export default async function ContactsPage({
                 </td>
               </tr>
             ) : (
-              items.map((c) => <ContactRowWithDrawer key={c.id} contact={c} />)
+              items.map((c) => (
+                <tr key={c.id} className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/contacts/${c.id}`}
+                      className="text-zinc-900 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
+                    >
+                      {c.name}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">{c.email ?? '—'}</td>
+                  <td className="px-3 py-2">{c.phone ?? '—'}</td>
+                  <td className="px-3 py-2">{c.account?.name ?? '—'}</td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>

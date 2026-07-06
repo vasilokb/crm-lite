@@ -79,11 +79,11 @@ export function StageProgressBar({
         lostReason,
       );
       if (!result.ok) {
-        if (result.message === 'reason_lost_required') {
+        if (result.error === 'reason_lost_required') {
           // Сервер попросил reasonLost — оставляем форму открытой.
           setShowReasonLost(true);
         }
-        setError(describeError(result.message));
+        setError(describeError(result.error));
         return;
       }
       setShowReasonLost(false);

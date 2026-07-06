@@ -7,7 +7,6 @@ import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/Badge';
 import { CreateLeadForm } from '@/components/CreateLeadForm';
-import { LeadRowWithDrawer } from '@/components/LeadRowWithDrawer';
 
 type SP = { q?: string; source?: string; status?: string; page?: string };
 
@@ -91,12 +90,26 @@ export default async function LeadsPage({
               </tr>
             ) : (
               items.map((lead) => (
-                <LeadRowWithDrawer
-                  key={lead.id}
-                  lead={lead}
-                  accounts={accountsPage.items}
-                  contacts={contactsPage.items}
-                />
+                <tr key={lead.id} className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/leads/${lead.id}`}
+                      className="text-zinc-900 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
+                    >
+                      {lead.name}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant={lead.source}>{lead.source}</Badge>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant={lead.status}>{lead.status}</Badge>
+                  </td>
+                  <td className="px-3 py-2">{lead.company ?? '—'}</td>
+                  <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">
+                    {new Date(lead.createdAt).toLocaleDateString('ru-RU')}
+                  </td>
+                </tr>
               ))
             )}
           </tbody>

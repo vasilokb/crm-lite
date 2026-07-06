@@ -21,8 +21,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: ReactNode;
+  modal: ReactNode;
 }>) {
   return (
     <html
@@ -42,6 +44,7 @@ export default function RootLayout({
           </nav>
         </header>
         <main className="min-h-[calc(100vh-57px)]">{children}</main>
+        {modal}
       </body>
     </html>
   );

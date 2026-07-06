@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { getOpportunity } from '@/lib/opportunities';
 import { getStages } from '@/lib/stages';
 import { OpportunityCard } from '@/components/OpportunityCard';
-import { CardOverlayWrapper } from '@/components/CardOverlayWrapper';
 
 export default async function OpportunityFullPage({
   params,
@@ -17,8 +16,16 @@ export default async function OpportunityFullPage({
   ]);
   if (!opp) notFound();
   return (
-    <CardOverlayWrapper listPath="/opportunities">
-      <OpportunityCard opportunity={opp} stages={stages} />
-    </CardOverlayWrapper>
+    <main className="p-6 max-w-4xl mx-auto">
+      <Link
+        href="/opportunities"
+        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+      >
+        ← К списку сделок
+      </Link>
+      <div className="mt-4 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+        <OpportunityCard opportunity={opp} stages={stages} />
+      </div>
+    </main>
   );
 }

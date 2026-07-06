@@ -1,6 +1,6 @@
 export type Result<T> =
   | { ok: true; data: T }
-  | { ok: false; fieldErrors?: Record<string, string[]>; message?: string };
+  | { ok: false; fieldErrors?: Record<string, string[]>; error?: string; message?: string };
 
 export type Paginated<T> = {
   items: T[];

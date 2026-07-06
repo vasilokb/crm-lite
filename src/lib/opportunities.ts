@@ -126,23 +126,23 @@ export async function updateOpportunityStage(
     prisma.opportunity.findUnique({ where: { id: parsed.data.opportunityId } }),
     prisma.stage.findUnique({ where: { id: parsed.data.newStageId } }),
   ]);
-  if (!opp) return { ok: false, message: 'opportunity_not_found' };
-  if (!newStage) return { ok: false, message: 'stage_not_found' };
+  if (!opp) return { ok: false, error: 'opportunity_not_found' };
+  if (!newStage) return { ok: false, error: 'stage_not_found' };
 
   // 3. Правила won (Plan.md §6.3).
   if (newStage.name === 'won') {
     if (opp.amount === null || opp.amount === undefined) {
-      return { ok: false, message: 'amount_required' };
+      return { ok: false, error: 'amount_required' };
     }
     if (!opp.contactId) {
-      return { ok: false, message: 'contact_required' };
+      return { ok: false, error: 'contact_required' };
     }
   }
 
   // 4. Правила lost.
   if (newStage.name === 'lost') {
     if (!parsed.data.reasonLost || !parsed.data.reasonLost.trim()) {
-      return { ok: false, message: 'reason_lost_required' };
+      return { ok: false, error: 'reason_lost_required' };
     }
   }
 

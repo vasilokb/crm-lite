@@ -7,7 +7,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateOpportunityForm } from '@/components/CreateOpportunityForm';
-import { OpportunityRowWithDrawer } from '@/components/OpportunityRowWithDrawer';
+import { Badge } from '@/components/Badge';
 
 type SP = { q?: string; stage?: string; status?: string; page?: string };
 
@@ -24,6 +24,11 @@ const STATUS_OPTIONS = [
   { value: 'won',  label: 'Выиграна' },
   { value: 'lost', label: 'Проиграна' },
 ];
+
+function formatAmount(value: number | null): string {
+  if (value === null || value === undefined) return '—';
+  return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
+}
 
 export default async function OpportunitiesPage({
   searchParams,
@@ -96,7 +101,29 @@ export default async function OpportunitiesPage({
                 </td>
               </tr>
             ) : (
-              items.map((opp) => <OpportunityRowWithDrawer key={opp.id} opportunity={opp} stages={stages} />)
+              items.map((opp) => (
+                <tr key={opp.id} className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/opportunities/${opp.id}`}
+                      className="text-zinc-900 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
+                    >
+                      {opp.title}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatAmount(opp.amount)}</td>
+                  <td className="px-3 py-2">
+                    <Badge variant={opp.stage.name as 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'}>
+                      {opp.stage.name}
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant={opp.status}>{opp.status}</Badge>
+                  </td>
+                  <td className="px-3 py-2">{opp.account?.name ?? '—'}</td>
+                  <td className="px-3 py-2">{opp.contact?.name ?? '—'}</td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>

@@ -4,7 +4,6 @@ import { getLead } from '@/lib/leads';
 import { getAccounts } from '@/lib/accounts';
 import { getContacts } from '@/lib/contacts';
 import { LeadCard } from '@/components/LeadCard';
-import { CardOverlayWrapper } from '@/components/CardOverlayWrapper';
 
 export default async function LeadFullPage({
   params,
@@ -19,12 +18,17 @@ export default async function LeadFullPage({
   ]);
   if (!lead) notFound();
 
-  // Рендерим ВСЕГДА через Drawer overlay (даже на direct URL).
-  // Закрытие = возврат на /leads.
-  // Для refresh/share-link это эквивалентно тому, что было в фазе 7/8.
   return (
-    <CardOverlayWrapper listPath="/leads">
-      <LeadCard lead={lead} accounts={accountsPage.items} contacts={contactsPage.items} />
-    </CardOverlayWrapper>
+    <main className="p-6 max-w-4xl mx-auto">
+      <Link
+        href="/leads"
+        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+      >
+        ← К списку лидов
+      </Link>
+      <div className="mt-4 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+        <LeadCard lead={lead} accounts={accountsPage.items} contacts={contactsPage.items} />
+      </div>
+    </main>
   );
 }
