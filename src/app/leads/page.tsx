@@ -13,6 +13,9 @@ import {
   leadStatusLabel,
 } from '@/lib/labels';
 
+// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
+export const revalidate = 30;
+
 type SP = { q?: string; source?: string; status?: string; page?: string };
 
 export default async function LeadsPage({

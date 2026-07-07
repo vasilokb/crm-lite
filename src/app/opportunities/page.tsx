@@ -14,6 +14,9 @@ import {
   opportunityStatusLabel,
 } from '@/lib/labels';
 
+// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
+export const revalidate = 30;
+
 type SP = { q?: string; stage?: string; status?: string; page?: string };
 
 const STAGE_OPTIONS = [

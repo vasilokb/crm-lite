@@ -7,6 +7,9 @@ import { Pagination } from '@/components/Pagination';
 import { CreateContactForm } from '@/components/CreateContactForm';
 import { TABLE_HEADERS } from '@/lib/labels';
 
+// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
+export const revalidate = 30;
+
 type SP = { q?: string; accountId?: string; page?: string };
 
 export default async function ContactsPage({

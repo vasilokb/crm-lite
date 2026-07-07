@@ -6,6 +6,9 @@ import { Pagination } from '@/components/Pagination';
 import { CreateAccountForm } from '@/components/CreateAccountForm';
 import { TABLE_HEADERS } from '@/lib/labels';
 
+// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
+export const revalidate = 30;
+
 type SP = { q?: string; page?: string };
 
 export default async function AccountsPage({

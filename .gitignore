@@ -47,3 +47,6 @@ next-env.d.ts
 mvp.md
 home-work.md
 /src/generated/prisma
+
+.vercel
+.env*

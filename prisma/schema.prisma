@@ -4,7 +4,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Runtime: Neon pooled URL (POSTGRES_PRISMA_URL on Vercel).
+  // Falls back to DATABASE_URL in local dev (.env / .env.local).
+  url = env("POSTGRES_PRISMA_URL")
+  // Migrations & introspection need a non-pooled connection.
+  // POSTGRES_URL_NON_POOLING on Vercel; DATABASE_URL locally.
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 // ===== ENUMS =====
