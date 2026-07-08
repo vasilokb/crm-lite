@@ -58,7 +58,7 @@ export function Drawer({
           aria-label="Закрыть"
           className="absolute inset-0 bg-black/40 cursor-default"
         />
-        <aside className="relative ml-auto h-full w-full max-w-xl shrink-0 bg-white dark:bg-zinc-900 shadow-xl overflow-y-auto border-l border-zinc-200 dark:border-zinc-800">
+        <aside className="relative ml-auto h-full w-full sm:max-w-xl shrink-0 bg-white dark:bg-zinc-900 shadow-xl overflow-y-auto border-l border-zinc-200 dark:border-zinc-800">
           {children}
         </aside>
       </div>
