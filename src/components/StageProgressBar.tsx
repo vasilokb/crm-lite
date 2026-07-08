@@ -96,12 +96,12 @@ export function StageProgressBar({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="hidden sm:flex flex-nowrap items-center gap-1 overflow-x-auto">
         {stages.map((stage, i) => {
           const isPast = i < currentIndex;
           const isCurrent = i === currentIndex;
           return (
-            <div key={stage.id} className="flex items-center">
+            <div key={stage.id} className="flex shrink-0 items-center">
               <button
                 type="button"
                 onClick={() => handleStageClick(stage)}
@@ -122,14 +122,37 @@ export function StageProgressBar({
               {i < stages.length - 1 && (
                 <div
                   className={[
-                    'h-0.5 w-4 sm:w-6',
+                    'h-0.5 w-4 sm:w-3',
                     i < currentIndex ? 'bg-indigo-400' : 'bg-zinc-200 dark:bg-zinc-700',
                   ].join(' ')}
                 />
               )}
             </div>
           );
-        })}
+})}
+      </div>
+
+      {/* Мобильный выбор стадии: нативный <select> показывается <640 px (sm:hidden).
+          Контролируется currentStageId → всегда отражает реальную текущую стадию
+          (нет рассинхрона при отмене формы отказа). Выбор зовёт тот же handleStageClick
+          → переиспользуются UX-проверки (won/lost) и форма reasonLost ниже. */}
+      <div className="sm:hidden">
+        <select
+          value={currentStageId}
+          onChange={(e) => {
+            const next = stages.find((s) => s.id === e.target.value);
+            if (next) handleStageClick(next);
+          }}
+          disabled={pending}
+          aria-label="Стадия сделки"
+          className="block w-full min-h-[44px] rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+        >
+          {stages.map((stage) => (
+            <option key={stage.id} value={stage.id}>
+              {stageLabel(stage.name)}
+            </option>
+          ))}
+        </select>
       </div>
 
       {showReasonLost && (

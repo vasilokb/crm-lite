@@ -79,13 +79,13 @@ export default async function LeadsPage({
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[520px] text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.name}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.source}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.status}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.company}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.leads.company}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.leads.created}</th>
             </tr>
           </thead>
@@ -113,7 +113,7 @@ export default async function LeadsPage({
                   <td className="px-3 py-2">
                     <Badge kind="leadStatus" variant={lead.status} value={lead.status} />
                   </td>
-                  <td className="px-3 py-2">{lead.company ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{lead.company ?? '—'}</td>
                   <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">
                     {new Date(lead.createdAt).toLocaleDateString('ru-RU')}
                   </td>

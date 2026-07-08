@@ -81,8 +81,16 @@ export function StagesChart({ labels, values, rawLabels }: Props) {
     },
   };
 
+  // a11y: текстовый эквивалент графика для скринридеров (canvas невидим для AT).
+  const summary = labels.map((l, i) => `${l}: ${values[i] ?? 0}`).join(', ');
+  const ariaLabel = `Диаграмма сделок по стадиям воронки. ${summary}`;
+
   return (
-    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+    <div
+      role="img"
+      aria-label={ariaLabel}
+      style={{ position: 'relative', height: '100%', width: '100%' }}
+    >
       <Bar data={data} options={options} />
     </div>
   );

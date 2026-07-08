@@ -90,15 +90,15 @@ export default async function OpportunitiesPage({
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.title}</th>
               <th className="px-3 py-2 font-medium text-right">{TABLE_HEADERS.opportunities.amount}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.stage}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.status}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.company}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.opportunities.contact}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.opportunities.company}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.opportunities.contact}</th>
             </tr>
           </thead>
           <tbody>
@@ -130,8 +130,8 @@ export default async function OpportunitiesPage({
                   <td className="px-3 py-2">
                     <Badge kind="oppStatus" variant={opp.status} value={opp.status} />
                   </td>
-                  <td className="px-3 py-2">{opp.account?.name ?? '—'}</td>
-                  <td className="px-3 py-2">{opp.contact?.name ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{opp.account?.name ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{opp.contact?.name ?? '—'}</td>
                 </tr>
               ))
             )}

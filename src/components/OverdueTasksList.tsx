@@ -35,7 +35,7 @@ export function OverdueTasksList({ tasks }: { tasks: Task[] }) {
           {t.opportunity ? (
             <Link
               href={`/opportunities/${t.opportunity.id}`}
-              className="block rounded px-2 py-1 -mx-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-l-2 border-rose-400"
+              className="block min-h-[44px] rounded px-2 py-1 -mx-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-l-2 border-rose-400"
             >
               <div className="text-sm text-zinc-900 dark:text-zinc-50">{t.text}</div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2 mt-0.5">

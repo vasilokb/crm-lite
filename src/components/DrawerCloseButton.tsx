@@ -9,7 +9,7 @@ export function DrawerCloseButton() {
       type="button"
       onClick={close}
       aria-label="Закрыть"
-      className="rounded p-1 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50"
+      className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded p-1 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50"
     >
       <span className="block w-6 h-6 leading-6 text-center text-lg">×</span>
     </button>

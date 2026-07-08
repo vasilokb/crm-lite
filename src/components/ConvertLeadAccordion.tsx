@@ -179,7 +179,7 @@ export function ConvertLeadAccordion({
           ))}
         </label>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input
             name="contactEmail"
             type="email"
@@ -199,7 +199,7 @@ export function ConvertLeadAccordion({
           Создать сделку
         </label>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input
             name="opportunityTitle"
             placeholder="Название сделки"

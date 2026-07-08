@@ -1,4 +1,4 @@
-﻿# TEST_REPORT — CRM-lite
+# TEST_REPORT — CRM-lite
 
 > Финальный отчёт фазы 12 (`home-work/docs/plans/phase-12-testing.md` + `home-work/Plan.md` §10).
 > Дата прогона: 2026-07-06. Стек: Next.js 16.2.10 (Turbopack), React 19.2.4, Prisma 6.19.3, PostgreSQL crm_dev.
@@ -338,7 +338,7 @@ for (const o of original) { await prisma.opportunity.update({ where: { id: o.id 
 - **Вердикт:** ✅ PASS.
 
 ### 4.4 Нет лишних файлов (home-work.md фаза 9, критерий 8)
-- `docs/mvp.md` — НЕ существует ✓
+- `docs/mvp.md` — удалён (устаревший черновик ред. 6.0, заменён final-mvp.md ред. 7.0) ✓
 - `crm-lite/docs/screens.md` — НЕ существует ✓
 - `prisma.config.ts` — НЕ существует ✓
 - `@prisma/adapter-pg` в `package.json` — НЕ найдено ✓
@@ -366,3 +366,61 @@ for (const o of original) { await prisma.opportunity.update({ where: { id: o.id 
 ## 6. Фиксация в канале сдачи (home-work.md фаза 9, критерий 10)
 
 [DELIVERED] канал=<SourceCraft|GitHub|other>, дата=YYYY-MM-DD, ссылка=<url>
+
+---
+
+## 7. Mobile QA (Post-MVP)
+
+> Цикл mobile + performance (Plan-UI.md, фазы 0–8). Проверка в Chrome DevTools (device toolbar) на viewport 375 / 768 / 1280 px. Чекбоксы ☐ заполняются по факту прогона. Дата прогона: <YYYY-MM-DD>.
+
+### 7.1 Адаптив вёрстки (нет page-level H-скролла)
+
+| Маршрут | 375 px | 768 px | 1280 px |
+|---|---|---|---|
+| `/dashboard` | ☐ KPI 1 col, графики стопкой | ☐ KPI 2 col | ☐ KPI 4 col, без регрессий |
+| `/leads` | ☐ burger, фильтры 1 col, таблица скроллится внутри | ☐ nav видна | ☐ десктоп |
+| `/leads/[id]` Drawer | ☐ full-screen | — | ☐ `max-w-xl` |
+| Convert lead (Accordion) | ☐ поля 1 col | ☐ 2 col | ☐ 2 col |
+| `/opportunities` | ☐ `amount` виден, company/contact скрыты | ☐ все колонки | ☐ десктоп |
+| `/opportunities/[id]` Drawer | ☐ StageProgressBar = `<select>` | ☐ цепочка одной строкой | ☐ цепочка одной строкой |
+| `/accounts`, `/contacts` | ☐ без H-скролла | ☐ | ☐ |
+
+### 7.2 Компоненты mobile-цикла
+
+- **NavHeader:** burger `<768`, раскрывается/закрывается (клик + смена маршрута); ≥768 — горизонтальная nav; активная ссылка фиолетовая + `font-semibold`. ☐
+- **Drawer:** на 375 — `w-full` (full-screen), кнопка × ≥44×44; на ≥640 — `max-w-xl`. ☐
+- **Формы:** `grid-cols-1` на 375, `sm:grid-cols-2` на ≥640 (ConvertLeadAccordion, CreateLeadForm, LeadForm). ☐
+- **Таблицы:** `overflow-x-auto` + `min-w-[…]` (реальный внутренний скролл) + `hidden sm:table-cell` на второстепенных; `amount` всегда виден. ☐
+- **StageProgressBar:** мобильный `<select>` <640; трекер одной строкой (`flex-nowrap`) ≥640. ☐
+- **Dashboard a11y:** графики с `role="img"` + `aria-label`; touch-target ≥44 px в RecentLeadsList/OverdueTasksList. ☐
+
+### 7.3 Performance / ISR
+
+- Dashboard: `export const revalidate = 30` (не `force-dynamic`); `dashboard/loading.tsx` skeleton presence. ☐
+- `package.json`: `"dev": "next dev -p 3001"`, `"postinstall": "prisma generate"`. ☐
+- Мутации инвалидируют `/dashboard` через `safeRevalidate` (данные актуальны сразу после действия). ☐
+
+### 7.4 Сборка
+
+- `npx tsc --noEmit` → **exit 0**. ☐
+- `npm run build` → **exit 0**. ☐
+
+### 7.5 Lighthouse Accessibility (Chrome, mobile simulation)
+
+| Маршрут | Accessibility | Performance | Скриншот |
+|---|---|---|---|
+| `/dashboard` | ☐ (цель ≥95) | ☐ | `<ссылка/путь>` |
+| `/leads` | ☐ (цель ≥95) | ☐ | `<ссылка/путь>` |
+
+> Если Accessibility < 95 — зафиксировать как known limitation: указать конкретный пункт аудита (контраст, ARIA, tabindex) и причину.
+
+### 7.6 Known limitations
+
+- Внутренний H-скролл широких таблиц на 375 px (бейдж стадии + amount) — **норма** по плану D-2 (критерий — отсутствие page-level скролла, не абсолютное). ☐
+- _(дополнить при наличии иных ограничений)_
+
+### 7.7 Очистка пакета (фаза 0)
+
+- `docs/mvp.md` — удалён (устаревший ред. 6.0; канон `final-mvp.md` ред. 7.0). ☐
+- `tmp-dbg.html` (корень `crm/`) — удалён. ☐
+- `TEST_REPORT.md:341` — формулировка о `mvp.md` уточнена. ☐
