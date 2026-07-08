@@ -329,7 +329,7 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
           ))}
         </label>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">Email</span>
             <input
@@ -426,7 +426,7 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">
               Источник <span className="text-rose-600">*</span>
@@ -458,7 +458,7 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">Бюджет, ₽</span>
             <input

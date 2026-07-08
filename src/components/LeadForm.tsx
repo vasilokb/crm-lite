@@ -265,7 +265,7 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
         errors={errors.name}
       />
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Field name="email" label="Email" type="email" defaultValue={lead.email ?? ''} errors={errors.email} />
         <Field name="phone" label="Телефон" defaultValue={lead.phone ?? ''} errors={errors.phone} />
       </div>
@@ -338,7 +338,7 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <SelectField
           name="source"
           label="Источник"
