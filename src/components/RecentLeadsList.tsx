@@ -19,7 +19,7 @@ export function RecentLeadsList({ leads }: { leads: Lead[] }) {
         <li key={l.id} className="py-2 first:pt-0 last:pb-0">
           <Link
             href={`/leads/${l.id}`}
-            className="flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded px-2 py-1 -mx-2"
+            className="flex min-h-[44px] items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded px-2 py-1 -mx-2"
           >
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">{l.name}</div>
