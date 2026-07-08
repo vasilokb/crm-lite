@@ -48,12 +48,12 @@ export default async function ContactsPage({
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[440px] text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.name}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.email}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.phone}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.contacts.email}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.contacts.phone}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.contacts.company}</th>
             </tr>
           </thead>
@@ -75,8 +75,8 @@ export default async function ContactsPage({
                       {c.name}
                     </Link>
                   </td>
-                  <td className="px-3 py-2">{c.email ?? '—'}</td>
-                  <td className="px-3 py-2">{c.phone ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{c.email ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{c.phone ?? '—'}</td>
                   <td className="px-3 py-2">{c.account?.name ?? '—'}</td>
                 </tr>
               ))

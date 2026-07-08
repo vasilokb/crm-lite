@@ -40,11 +40,11 @@ export default async function AccountsPage({
       </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[480px] text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.name}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.website}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.accounts.website}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.contacts}</th>
               <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.opportunities}</th>
             </tr>
@@ -67,7 +67,7 @@ export default async function AccountsPage({
                       {acc.name}
                     </Link>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden sm:table-cell">
                     {acc.website ? (
                       <a href={acc.website} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">
                         {acc.website}
