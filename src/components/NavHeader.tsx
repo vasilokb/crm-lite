@@ -30,7 +30,7 @@ export function NavHeader() {
               href={item.href}
               className={[
                 active
-                  ? 'text-white'
+                  ? 'text-violet-600 dark:text-violet-400 font-semibold'
                   : 'text-zinc-500 dark:text-zinc-400',
                 'hover:text-violet-600 dark:hover:text-violet-400',
               ].join(' ')}
