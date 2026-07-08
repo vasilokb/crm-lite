@@ -6,7 +6,7 @@ import { LeadsChart } from '@/components/LeadsChart';
 import { RecentLeadsList } from '@/components/RecentLeadsList';
 import { OverdueTasksList } from '@/components/OverdueTasksList';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
