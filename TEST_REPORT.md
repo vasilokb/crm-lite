@@ -338,7 +338,7 @@ for (const o of original) { await prisma.opportunity.update({ where: { id: o.id 
 - **Вердикт:** ✅ PASS.
 
 ### 4.4 Нет лишних файлов (home-work.md фаза 9, критерий 8)
-- `docs/mvp.md` — НЕ существует ✓
+- `docs/mvp.md` — удалён (устаревший черновик ред. 6.0, заменён final-mvp.md ред. 7.0) ✓
 - `crm-lite/docs/screens.md` — НЕ существует ✓
 - `prisma.config.ts` — НЕ существует ✓
 - `@prisma/adapter-pg` в `package.json` — НЕ найдено ✓
