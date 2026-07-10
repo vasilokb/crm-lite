@@ -27,8 +27,8 @@
 | A2. Миграция: tenant-scoping бизнес-таблиц (ручной SQL) | D | [x] | [x] | 2026-07-10 — tenant_scope_business (сборка сломана до A8 планово) |
 | A3. Миграция: rename таблицы `Account` → `Customer` | D | [x] | [x] | 2026-07-10 — rename_account_to_customer |
 | A4. Обновление seed под multi-tenant | D | [x] | [x] | 2026-07-10 — seed multi-tenant (default org + owner + organizationId) |
-| A5. Auth.js v5: config + adapter + callbacks | B | [ ] | [ ] | session-callback авто-заполняет `activeOrganizationId`; Test — scoped tsx |
-| A6. Контекст сессии: `getCurrentUser`/`getCurrentOrgId` | B | [ ] | [ ] | часть фазы A5 |
+| A5. Auth.js v5: config + adapter + callbacks | B | [x] | [x] | 2026-07-10 — Auth.js v5 + database-session + getCurrentUser/getCurrentOrgId |
+| A6. Контекст сессии: `getCurrentUser`/`getCurrentOrgId` | B | [x] | [x] | 2026-07-10 — см. A5 |
 | A7. Tenant-клиент `createTenantPrisma` + ESLint | B | [ ] | [ ] | ядро изоляции; Test — scoped tsx + scoped lint |
 | A8. Рефакторинг кода: server actions + rename (backend+UI) | B+F | [ ] | [ ] | **точка восстановления сборки**; `prisma.*`→`getTenantPrisma()`, `findUnique`→`findFirst`, `upsert` compound, `account`→`customer` в коде/роутах/типах |
 | A9. Auth UI: login/register/invite + workspace + guards | F+B | [ ] | [ ] | `(app)`-group guard, `switchWorkspace`, `/invite/[token]` |
