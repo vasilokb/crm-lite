@@ -83,7 +83,7 @@ model Stage {
   @@unique([organizationId, position])
 }
 
-model Account {
+model Customer {                              // ex-Account (rename фаза A3)
   id        String   @id @default(cuid())
   name      String
   website   String?
@@ -114,7 +114,7 @@ model Contact {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   accountId String?
-  account   Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  customer  Customer? @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
   opportunities Opportunity[]
 
@@ -144,7 +144,7 @@ model Opportunity {
   lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
   accountId String?
-  account   Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  customer  Customer? @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
   contactId String?
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
@@ -199,7 +199,24 @@ model User {
   sessions      Session[]
   memberships   Membership[]
   ownedLeads    Lead[]    @relation("LeadOwner")
-  // accounts Account[]      — добавится в A3 (после rename CRM Account->Customer)
+  accounts      Account[]
+}
+
+model Account {                                // Auth.js OAuth-привязки (пустая сейчас)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
@@ -228,7 +245,7 @@ model Organization {
   memberships Membership[]
   invites     InviteToken[]
   sessions    Session[]
-  accounts       Account[]
+  customers      Customer[]
   leads          Lead[]
   stages         Stage[]
   contacts       Contact[]

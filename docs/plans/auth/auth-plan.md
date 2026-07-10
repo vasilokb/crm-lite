@@ -25,8 +25,8 @@
 |---|---|---|---|---|
 | A1. Миграция: identity + tenancy (новые таблицы) | D | [x] | [x] | 2026-07-10 — 20260710055939_add_identity_and_tenancy |
 | A2. Миграция: tenant-scoping бизнес-таблиц (ручной SQL) | D | [x] | [x] | 2026-07-10 — tenant_scope_business (сборка сломана до A8 планово) |
-| A3. Миграция: rename таблицы `Account` → `Customer` | D | [ ] | [ ] | `ALTER TABLE RENAME`; кодовое переименование — в A8 |
-| A4. Обновление seed под multi-tenant | D | [ ] | [ ] | default Organization + owner + organizationId всем строкам |
+| A3. Миграция: rename таблицы `Account` → `Customer` | D | [x] | [x] | 2026-07-10 — rename_account_to_customer |
+| A4. Обновление seed под multi-tenant | D | [x] | [x] | 2026-07-10 — seed multi-tenant (default org + owner + organizationId) |
 | A5. Auth.js v5: config + adapter + callbacks | B | [ ] | [ ] | session-callback авто-заполняет `activeOrganizationId`; Test — scoped tsx |
 | A6. Контекст сессии: `getCurrentUser`/`getCurrentOrgId` | B | [ ] | [ ] | часть фазы A5 |
 | A7. Tenant-клиент `createTenantPrisma` + ESLint | B | [ ] | [ ] | ядро изоляции; Test — scoped tsx + scoped lint |
