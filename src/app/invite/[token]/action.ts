@@ -13,8 +13,9 @@ export async function acceptInviteAction(
   const token = String(formData.get('token') ?? '');
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
 
-  if (!token || !email || !password) {
+  if (!token || !email || !password || !name) {
     return { error: 'Заполните все поля' };
   }
   if (password.length < 6) {
@@ -35,8 +36,8 @@ export async function acceptInviteAction(
       const passwordHash = bcrypt.hashSync(password, 10);
       const user = await tx.user.upsert({
         where: { email },
-        update: { passwordHash },
-        create: { email, passwordHash, name: email },
+        update: { passwordHash, name },
+        create: { email, name, passwordHash },
       });
 
       // ensure membership (upsert — идемпотентно при повторном принятии)

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { signIn } from '@/auth';
+import { seedDefaultStages } from '@/lib/stages';
 
 export type RegisterResult = { error?: string };
 
@@ -14,8 +15,9 @@ export async function registerAction(
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   const companyName = String(formData.get('companyName') ?? '').trim();
+  const name = String(formData.get('name') ?? '').trim();
 
-  if (!email || !password || !companyName) {
+  if (!email || !password || !companyName || !name) {
     return { error: 'Заполните все поля' };
   }
   if (password.length < 6) {
@@ -39,13 +41,16 @@ export async function registerAction(
       const user = await tx.user.create({
         data: {
           email,
+          name,
           passwordHash: bcrypt.hashSync(password, 10),
-          name: email,
         },
       });
       const org = await tx.organization.create({
         data: { name: companyName, slug },
       });
+      // Onboarding: 5 дефолтных стадий воронки для новой организации.
+      // Без этого getStages() вернёт [] → createOpportunity/convertLead не работают.
+      await seedDefaultStages(tx, org.id);
       await tx.membership.create({
         data: {
           userId: user.id,

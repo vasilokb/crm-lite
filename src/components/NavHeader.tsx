@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { switchWorkspace } from '@/app/actions/workspace';
+import { logout } from '@/app/actions/team';
 
 const NAV_ITEMS = [
   { href: '/dashboard',     label: 'CRM-lite' },
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/customers',     label: 'Компании' },
   { href: '/contacts',      label: 'Контакты' },
   { href: '/opportunities', label: 'Сделки' },
+  { href: '/team',          label: 'Команда' },
 ];
 
 export type MembershipForSwitcher = {
@@ -38,6 +40,7 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [pending, start] = useTransition();
 
   // Закрывать мобильное меню при смене маршрута.
@@ -45,6 +48,7 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMenuOpen(false);
     setSwitcherOpen(false);
+    setProfileOpen(false);
   }, [pathname]);
 
   function isActive(href: string): boolean {
@@ -63,8 +67,22 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
     });
   }
 
+  function handleLogout(): void {
+    start(async () => {
+      try {
+        await logout();
+      } catch (e) {
+        if (e instanceof Error && e.message === 'NEXT_REDIRECT') throw e;
+        console.error('logout failed', e);
+        window.location.href = '/login';
+      }
+    });
+  }
+
   const activeMembership = memberships?.find((m) => m.organizationId === activeOrgId);
   const showSwitcher = Boolean(user && memberships && memberships.length > 0);
+  const showProfileMenu = Boolean(user);
+  const displayName = user?.name?.trim() || user?.email;
 
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -132,11 +150,56 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
           </div>
         )}
 
-        {/* User email / login link */}
-        {user ? (
-          <span className="hidden md:inline text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[180px]" title={user.email ?? ''}>
-            {user.email}
-          </span>
+        {/* Profile menu (email / «Команда» / «Выйти») */}
+        {showProfileMenu ? (
+          <div className="hidden md:block relative">
+            <button
+              type="button"
+              onClick={() => setProfileOpen((o) => !o)}
+              aria-expanded={profileOpen}
+              aria-haspopup="menu"
+              disabled={pending}
+              className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 max-w-[180px] truncate"
+              title={displayName ?? ''}
+            >
+              <span className="truncate">{displayName}</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            {profileOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 z-40 min-w-[220px] rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1"
+              >
+                <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                  <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Текущая организация
+                  </p>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                    {activeMembership?.organization.name ?? '—'}
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+                <Link
+                  href="/team"
+                  role="menuitem"
+                  className="block px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Команда
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  disabled={pending}
+                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 text-rose-700 dark:text-rose-400"
+                >
+                  {pending ? 'Выходим…' : 'Выйти'}
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link
             href="/login"
@@ -208,9 +271,19 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
           )}
 
           {user ? (
-            <p className="mt-2 border-t border-zinc-100 dark:border-zinc-800 px-4 py-2 text-xs text-zinc-500 dark:text-zinc-400 truncate">
-              {user.email}
-            </p>
+            <>
+              <p className="mt-2 border-t border-zinc-100 dark:border-zinc-800 px-4 py-2 text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                {user.name?.trim() || user.email}
+              </p>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={pending}
+                className="w-full text-left px-4 py-3 text-sm text-rose-700 dark:text-rose-400 border-t border-zinc-100 dark:border-zinc-800 disabled:opacity-50"
+              >
+                {pending ? 'Выходим…' : 'Выйти'}
+              </button>
+            </>
           ) : (
             <Link
               href="/login"

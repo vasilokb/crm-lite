@@ -32,7 +32,7 @@
 | A7. Tenant-клиент `createTenantPrisma` + ESLint | B | [x] | [x] | 2026-07-10 — createTenantPrisma + ESLint no-restricted-imports |
 | A8. Рефакторинг кода: server actions + rename (backend+UI) | B+F | [x] | [x] | 2026-07-10 — server actions на getTenantPrisma() + rename account→customer (code/UI); сборка восстановлена (tsc+lint green) |
 | A9. Auth UI: login/register/invite + workspace + guards | F+B | [x] | [x] | 2026-07-10 — login/register/invite UI + switchWorkspace + middleware guard (без переноса роутов) |
-| A9b. Команда (members/invites) + профиль-меню + имя | F+B | [ ] | [ ] | owner-side UI: `/team` (участники/роли/исключение/приглашения), «Выйти», «глазок» паролей, поле «Имя» (см. `phase-a9b-team.md`) |
+| A9b. Команда (members/invites) + профиль-меню + имя | F+B | [x] | [x] | 2026-07-10 — team UI (members/invites) + logout + name + password toggle |
 | A10. Приёмка: изоляция 2 org + сценарий final-mvp + lint/build | F+B+D | [ ] | [ ] | контрольный сценарий проходит под owner |
 
 **Правило:** после Test-критерия — `[x]`; если не прошло — «⚠ <дата>: <что не прошло>» и корректировка следующих шагов. Не переходить к следующей фазе, пока текущая не `[x]`.

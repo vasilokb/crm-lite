@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { acceptInviteAction, type InviteAcceptResult } from './action';
+import { PasswordInput } from '@/components/PasswordInput';
 
 type Props = {
   token: string;
@@ -40,14 +41,14 @@ export function InviteForm({ token, email }: Props) {
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-700 dark:text-zinc-300">
-          Пароль <span className="text-rose-600">*</span>
+          Имя <span className="text-rose-600">*</span>
         </span>
         <input
-          name="password"
-          type="password"
+          name="name"
           required
-          minLength={6}
-          autoComplete="new-password"
+          minLength={1}
+          maxLength={120}
+          placeholder="Иван Иванов"
           aria-invalid={Boolean(state?.error)}
           className={`rounded border px-3 py-2 outline-none focus:ring-1 ${
             state?.error
@@ -55,10 +56,19 @@ export function InviteForm({ token, email }: Props) {
               : 'border-zinc-300 dark:border-zinc-700 focus:border-indigo-500 focus:ring-indigo-500'
           } bg-white dark:bg-zinc-950`}
         />
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          Не короче 6 символов. Если у вас уже есть аккаунт с этим email — пароль будет обновлён.
-        </span>
       </label>
+
+      <PasswordInput
+        name="password"
+        label="Пароль"
+        required
+        minLength={6}
+        autoComplete="new-password"
+        errors={state?.error ? [state.error] : undefined}
+      />
+      <p className="-mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        Не короче 6 символов. Если у вас уже есть аккаунт с этим email — пароль будет обновлён.
+      </p>
 
       {state?.error && (
         <p role="alert" className="text-sm text-rose-700 dark:text-rose-400">

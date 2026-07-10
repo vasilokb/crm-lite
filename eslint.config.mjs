@@ -25,6 +25,7 @@ const eslintConfig = defineConfig([
       'src/app/invite/**',
       'src/app/login/**',
       'src/app/actions/**',
+      'src/app/team/**',
       'src/app/layout.tsx',
     ],
     rules: {
