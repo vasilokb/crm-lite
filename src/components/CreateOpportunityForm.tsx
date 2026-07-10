@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation';
 import { createOpportunity } from '@/lib/opportunities';
 import { Drawer } from '@/components/Drawer';
 import { DrawerHeader } from '@/components/DrawerHeader';
-import type { Stage, Account, Contact } from '@prisma/client';
+import type { Stage, Customer, Contact } from '@prisma/client';
 
 type Props = {
   stages: Stage[];
-  accounts: Account[];
+  customers: Customer[];
   contacts: Contact[];
 };
 
-export function CreateOpportunityForm({ stages, accounts, contacts }: Props) {
+export function CreateOpportunityForm({ stages, customers, contacts }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +33,11 @@ export function CreateOpportunityForm({ stages, accounts, contacts }: Props) {
   async function handleSubmit(formData: FormData): Promise<void> {
     reset();
     const input = {
-      title:     String(formData.get('title') ?? ''),
-      amount:    formData.get('amount') ? Number(formData.get('amount')) : undefined,
-      stageId:   String(formData.get('stageId') ?? stages[0]?.id ?? ''),
-      accountId: formData.get('accountId') ? String(formData.get('accountId')) : undefined,
-      contactId: formData.get('contactId') ? String(formData.get('contactId')) : undefined,
+      title:      String(formData.get('title') ?? ''),
+      amount:     formData.get('amount') ? Number(formData.get('amount')) : undefined,
+      stageId:    String(formData.get('stageId') ?? stages[0]?.id ?? ''),
+      customerId: formData.get('customerId') ? String(formData.get('customerId')) : undefined,
+      contactId:  formData.get('contactId') ? String(formData.get('contactId')) : undefined,
     };
     start(async () => {
       const result = await createOpportunity(input);
@@ -115,13 +115,13 @@ export function CreateOpportunityForm({ stages, accounts, contacts }: Props) {
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-zinc-700 dark:text-zinc-300">Компания</span>
               <select
-                name="accountId"
+                name="customerId"
                 defaultValue=""
                 className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">— без компании —</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </label>

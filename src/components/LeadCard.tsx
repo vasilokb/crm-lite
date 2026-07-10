@@ -2,10 +2,10 @@ import { DrawerHeader } from './DrawerHeader';
 import { DrawerRelatedList } from './DrawerRelatedList';
 import { LeadForm } from './LeadForm';
 import { ConvertLeadAccordion } from './ConvertLeadAccordion';
-import type { Account, Contact, Lead } from '@prisma/client';
+import type { Lead } from '@prisma/client';
 import Link from 'next/link';
 
-// LeadCard принимает массивы «как есть» из Prisma — включая Account с
+// LeadCard принимает массивы «как есть» из Prisma — включая Customer с
 // дополнительными полями (_count). Используем `any[]` чтобы не
 // переносить все Prisma payload-типы в signals.
 type LeadCardProps = {
@@ -13,16 +13,18 @@ type LeadCardProps = {
     opportunity: null | {
       id: string;
       title: string;
-      account: { id: string; name: string } | null;
+      customer: { id: string; name: string } | null;
     };
   };
-  accounts: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  customers: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contacts: any[];
 };
 
 export function LeadCard({
   lead,
-  accounts,
+  customers,
   contacts,
 }: LeadCardProps) {
   const relatedItems = [];
@@ -52,7 +54,7 @@ export function LeadCard({
       />
 
       <div className="px-6">
-        <LeadForm lead={lead} accounts={accounts} contacts={contacts} />
+        <LeadForm lead={lead} customers={customers} contacts={contacts} />
       </div>
 
       <div className="px-6">
@@ -77,8 +79,8 @@ export function LeadCard({
             >
               {lead.opportunity.title}
             </Link>
-            {lead.opportunity.account && (
-              <> · {lead.opportunity.account.name}</>
+            {lead.opportunity.customer && (
+              <> · {lead.opportunity.customer.name}</>
             )}
           </p>
         </section>

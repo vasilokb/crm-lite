@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { getTenantPrisma } from '@/lib/auth/session';
 import type { Stage } from '@prisma/client';
 
 /**
@@ -6,5 +6,6 @@ import type { Stage } from '@prisma/client';
  * Используется в server-страницах для StageProgressBar и CreateOpportunityForm.
  */
 export async function getStages(): Promise<Stage[]> {
-  return prisma.stage.findMany({ orderBy: { position: 'asc' } });
+  const db = await getTenantPrisma();
+  return db.stage.findMany({ orderBy: { position: 'asc' } });
 }

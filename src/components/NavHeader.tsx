@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 const NAV_ITEMS = [
   { href: '/dashboard',     label: 'CRM-lite' },
   { href: '/leads',         label: 'Лиды' },
-  { href: '/accounts',      label: 'Компании' },
+  { href: '/customers',     label: 'Компании' },
   { href: '/contacts',      label: 'Контакты' },
   { href: '/opportunities', label: 'Сделки' },
 ];
@@ -27,6 +27,7 @@ export function NavHeader() {
 
   // Закрывать мобильное меню при смене маршрута.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMenuOpen(false);
   }, [pathname]);
 

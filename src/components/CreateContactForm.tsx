@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { createContact } from '@/lib/contacts';
 import { Drawer } from '@/components/Drawer';
 import { DrawerHeader } from '@/components/DrawerHeader';
-import type { Account } from '@prisma/client';
+import type { Customer } from '@prisma/client';
 
-export function CreateContactForm({ accounts }: { accounts: Account[] }) {
+export function CreateContactForm({ customers }: { customers: Customer[] }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,11 +24,11 @@ export function CreateContactForm({ accounts }: { accounts: Account[] }) {
     setError(null);
     setFieldErrors(null);
     const input = {
-      name:      String(formData.get('name') ?? ''),
-      email:     String(formData.get('email') ?? '') || undefined,
-      phone:     String(formData.get('phone') ?? '') || undefined,
-      role:      String(formData.get('role') ?? '') || undefined,
-      accountId: String(formData.get('accountId') ?? '') || undefined,
+      name:       String(formData.get('name') ?? ''),
+      email:      String(formData.get('email') ?? '') || undefined,
+      phone:      String(formData.get('phone') ?? '') || undefined,
+      role:       String(formData.get('role') ?? '') || undefined,
+      customerId: String(formData.get('customerId') ?? '') || undefined,
     };
     start(async () => {
       const result = await createContact(input);
@@ -122,13 +122,13 @@ export function CreateContactForm({ accounts }: { accounts: Account[] }) {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-zinc-700 dark:text-zinc-300">Компания</span>
           <select
-            name="accountId"
+            name="customerId"
             defaultValue=""
             className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           >
             <option value="">— без компании —</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
         </label>

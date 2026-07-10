@@ -3,31 +3,31 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createLead } from '@/lib/leads';
-import { createAccount } from '@/lib/accounts';
+import { createCustomer } from '@/lib/customers';
 import { createContact } from '@/lib/contacts';
 import { Drawer } from '@/components/Drawer';
 import { DrawerHeader } from '@/components/DrawerHeader';
-import type { Account, Contact } from '@prisma/client';
+import type { Customer, Contact } from '@prisma/client';
 
 type Props = {
-  accounts: Account[];
+  customers: Customer[];
   contacts: Contact[];
 };
 
 const SOURCE_OPTIONS = ['site', 'email', 'phone', 'referral', 'manual'] as const;
 const STATUS_OPTIONS = ['new', 'processed'] as const;
 
-export function CreateLeadForm({ accounts: initialAccounts, contacts: initialContacts }: Props) {
+export function CreateLeadForm({ customers: initialCustomers, contacts: initialContacts }: Props) {
   const [open, setOpen] = useState(false);
-  const [subOpen, setSubOpen] = useState<'account' | 'contact' | null>(null);
+  const [subOpen, setSubOpen] = useState<'customer' | 'contact' | null>(null);
 
   // Локальные списки — обновляются при успешном inline-create,
   // чтобы селектор сразу содержал новую запись без router.refresh().
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
 
   // Auto-selected значения после inline-create.
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   // true = выбран режим «свободный ввод» (input под select)
   const [customCompanyMode, setCustomCompanyMode] = useState(false);
@@ -38,20 +38,22 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
   const router = useRouter();
 
   // При открытии Drawer — синхронизируем списки со свежими props
-  // (на случай если router.refresh() обновил accounts/contacts).
+  // (на случай если router.refresh() обновил customers/contacts).
   // При закрытии — сбрасываем selection.
   useEffect(() => {
     if (open) {
-      setAccounts(initialAccounts);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCustomers(initialCustomers);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setContacts(initialContacts);
     } else {
-      setSelectedAccountId('');
+      setSelectedCustomerId('');
       setSelectedContactId('');
       setCustomCompanyMode(false);
       setError(null);
       setFieldErrors(null);
     }
-  }, [open, initialAccounts, initialContacts]);
+  }, [open, initialCustomers, initialContacts]);
 
   function close(): void {
     setOpen(false);
@@ -70,11 +72,11 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
     const sourceRaw = String(formData.get('source') ?? 'manual');
     const statusRaw = String(formData.get('status') ?? 'new');
 
-    // company: либо ID существующего Account, либо свободный текст
+    // company: либо ID существующего Customer, либо свободный текст
     const companySelect = String(formData.get('companySelect') ?? '');
     const companyText   = String(formData.get('companyText')   ?? '').trim();
     const company = companySelect && companySelect !== '__custom__'
-      ? accounts.find((a) => a.id === companySelect)?.name ?? companyText
+      ? customers.find((c) => c.id === companySelect)?.name ?? companyText
       : companyText;
 
     const input = {
@@ -108,10 +110,10 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
     });
   }
 
-  // Inline create Account — внутри sub-Drawer.
+  // Inline create Customer — внутри sub-Drawer.
   // Закрываем sub-Drawer СРАЗУ (не дожидаясь server action) —
   // пользователь сразу возвращается в main Drawer.
-  async function handleCreateAccount(formData: FormData): Promise<void> {
+  async function handleCreateCustomer(formData: FormData): Promise<void> {
     const input = {
       name:     String(formData.get('name') ?? ''),
       website:  String(formData.get('website') ?? '') || undefined,
@@ -119,11 +121,11 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
     };
     setSubOpen(null);
     start(async () => {
-      const result = await createAccount(input);
+      const result = await createCustomer(input);
       if (!result.ok) return;
       const newId = result.data.id;
-      setAccounts((prev) => (prev.find((a) => a.id === newId) ? prev : [...prev, result.data]));
-      setSelectedAccountId(newId);
+      setCustomers((prev) => (prev.find((c) => c.id === newId) ? prev : [...prev, result.data]));
+      setSelectedCustomerId(newId);
       setCustomCompanyMode(false);
       router.refresh();
     });
@@ -131,13 +133,13 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
 
   // Inline create Contact — внутри sub-Drawer.
   async function handleCreateContact(formData: FormData): Promise<void> {
-    const accountIdRaw = String(formData.get('accountId') ?? '');
+    const customerIdRaw = String(formData.get('customerId') ?? '');
     const input = {
-      name:      String(formData.get('name') ?? ''),
-      email:     String(formData.get('email') ?? '') || undefined,
-      phone:     String(formData.get('phone') ?? '') || undefined,
-      role:      String(formData.get('role') ?? '') || undefined,
-      accountId: accountIdRaw || undefined,
+      name:       String(formData.get('name') ?? ''),
+      email:      String(formData.get('email') ?? '') || undefined,
+      phone:      String(formData.get('phone') ?? '') || undefined,
+      role:       String(formData.get('role') ?? '') || undefined,
+      customerId: customerIdRaw || undefined,
     };
     setSubOpen(null);
     start(async () => {
@@ -163,12 +165,12 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
     );
   }
 
-  // ── Sub-Drawer: Создать Account ──────────────────────────────────────
-  if (subOpen === 'account') {
+  // ── Sub-Drawer: Создать Customer ──────────────────────────────────────
+  if (subOpen === 'customer') {
     return (
       <Drawer onClose={closeSub}>
-        <DrawerHeader entity="account" title="Новая компания" />
-        <form action={handleCreateAccount} className="flex flex-col gap-4 px-6 py-4">
+        <DrawerHeader entity="customer" title="Новая компания" />
+        <form action={handleCreateCustomer} className="flex flex-col gap-4 px-6 py-4">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">
               Название <span className="text-rose-600">*</span>
@@ -262,7 +264,6 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
             <span className="text-zinc-700 dark:text-zinc-300">Должность</span>
             <input
               name="role"
-              maxLength={100}
               placeholder="Например, CFO"
               className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
@@ -270,13 +271,13 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">Компания</span>
             <select
-              name="accountId"
+              name="customerId"
               defaultValue=""
               className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">— без компании —</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </label>
@@ -365,24 +366,24 @@ export function CreateLeadForm({ accounts: initialAccounts, contacts: initialCon
             <select
               id="companySelect"
               name="companySelect"
-              key={`company-${selectedAccountId}-${accounts.length}`}
-              value={selectedAccountId}
+              key={`customer-${selectedCustomerId}-${customers.length}`}
+              value={selectedCustomerId}
               onChange={(e) => {
                 const v = e.target.value;
-                setSelectedAccountId(v);
+                setSelectedCustomerId(v);
                 setCustomCompanyMode(v === '__custom__');
               }}
               className="flex-1 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">— выбрать из списка —</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
               <option value="__custom__">— свободный ввод —</option>
             </select>
             <button
               type="button"
-              onClick={() => setSubOpen('account')}
+              onClick={() => setSubOpen('customer')}
               className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 whitespace-nowrap"
             >
               + Создать

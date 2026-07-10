@@ -1,43 +1,43 @@
 import { DrawerHeader } from './DrawerHeader';
 import { DrawerRelatedList } from './DrawerRelatedList';
-import { AccountForm } from './AccountForm';
-import type { Account, Contact, Opportunity } from '@prisma/client';
+import { CustomerForm } from './CustomerForm';
+import type { Customer, Contact, Opportunity } from '@prisma/client';
 import Link from 'next/link';
 import { stageLabel } from '@/lib/labels';
 
-type AccountFull = Account & {
+type CustomerFull = Customer & {
   contacts: Contact[];
   opportunities: Array<Opportunity & { stage: { name: string } }>;
 };
 
-export function AccountCard({ account }: { account: AccountFull }) {
+export function CustomerCard({ customer }: { customer: CustomerFull }) {
   const relatedItems = [
-    { label: 'Контакты', href: '#contacts', count: account.contacts.length },
-    { label: 'Сделки',   href: '#opportunities', count: account.opportunities.length },
+    { label: 'Контакты', href: '#contacts', count: customer.contacts.length },
+    { label: 'Сделки',   href: '#opportunities', count: customer.opportunities.length },
   ];
 
   return (
     <article className="flex flex-col gap-4">
       <DrawerHeader
-        entity="account"
-        title={account.name}
+        entity="customer"
+        title={customer.name}
       />
 
       <div className="px-6">
-        <AccountForm account={account} />
+        <CustomerForm customer={customer} />
       </div>
 
       <DrawerRelatedList title="Связи" items={relatedItems} context="inside-drawer" />
 
       <section id="contacts" className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
         <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Контакты ({account.contacts.length})
+          Контакты ({customer.contacts.length})
         </h3>
-        {account.contacts.length === 0 ? (
+        {customer.contacts.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Нет контактов</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {account.contacts.map((c) => (
+            {customer.contacts.map((c) => (
               <li key={c.id} className="text-sm">
                 <Link
                   href={`/contacts/${c.id}`}
@@ -59,13 +59,13 @@ export function AccountCard({ account }: { account: AccountFull }) {
 
       <section id="opportunities" className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
         <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Сделки ({account.opportunities.length})
+          Сделки ({customer.opportunities.length})
         </h3>
-        {account.opportunities.length === 0 ? (
+        {customer.opportunities.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Нет сделок</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {account.opportunities.map((o) => (
+            {customer.opportunities.map((o) => (
               <li key={o.id} className="text-sm">
                 <Link
                   href={`/opportunities/${o.id}`}

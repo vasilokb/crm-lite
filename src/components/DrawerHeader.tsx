@@ -11,7 +11,7 @@ export function DrawerHeader({
   source,
   stage,
 }: {
-  entity: 'lead' | 'account' | 'contact' | 'opportunity';
+  entity: 'lead' | 'customer' | 'contact' | 'opportunity';
   title: string;
   status?: string;
   statusKind?: StatusKind;
@@ -20,7 +20,7 @@ export function DrawerHeader({
 }) {
   const labels = {
     lead:        'Лид',
-    account:     'Компания',
+    customer:    'Компания',
     contact:     'Контакт',
     opportunity: 'Сделка',
   } as const;

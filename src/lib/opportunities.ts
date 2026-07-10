@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client';
 import { safeRevalidate } from './revalidate';
-import { prisma } from './db';
+import { getTenantPrisma } from '@/lib/auth/session';
 import {
   opportunityInputSchema,
   opportunityStageUpdateSchema,
@@ -14,7 +14,7 @@ import type { Opportunity } from '@prisma/client';
 type OpportunityWithRefs = Prisma.OpportunityGetPayload<{
   include: {
     stage: true;
-    account: { select: { id: true; name: true } };
+    customer: { select: { id: true; name: true } };
     contact: { select: { id: true; name: true } };
     _count: { select: { activities: true } };
   };
@@ -23,15 +23,17 @@ type OpportunityWithRefs = Prisma.OpportunityGetPayload<{
 export async function createOpportunity(input: OpportunityInput): Promise<Result<Opportunity>> {
   const p = opportunityInputSchema.safeParse(input);
   if (!p.success) return { ok: false, fieldErrors: p.error.flatten().fieldErrors };
-  const opp = await prisma.opportunity.create({
+  const db = await getTenantPrisma();
+  const opp = await db.opportunity.create({
     data: {
       title:     p.data.title,
       amount:    p.data.amount ?? null,
       dueDate:   p.data.dueDate ? new Date(p.data.dueDate) : null,
       stageId:   p.data.stageId,
-      accountId: p.data.accountId ?? null,
+      accountId: p.data.customerId ?? null,
       contactId: p.data.contactId ?? null,
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
   });
   safeRevalidate('/opportunities');
   safeRevalidate('/dashboard');
@@ -44,14 +46,17 @@ export async function updateOpportunity(
 ): Promise<Result<Opportunity>> {
   const p = opportunityInputSchema.safeParse(input);
   if (!p.success) return { ok: false, fieldErrors: p.error.flatten().fieldErrors };
-  const opp = await prisma.opportunity.update({
+  const db = await getTenantPrisma();
+  const existing = await db.opportunity.findFirst({ where: { id } });
+  if (!existing) return { ok: false, error: 'not_found' };
+  const opp = await db.opportunity.update({
     where: { id },
     data: {
       title:     p.data.title,
       amount:    p.data.amount ?? null,
       dueDate:   p.data.dueDate ? new Date(p.data.dueDate) : null,
       stageId:   p.data.stageId,
-      accountId: p.data.accountId ?? null,
+      accountId: p.data.customerId ?? null,
       contactId: p.data.contactId ?? null,
     },
   });
@@ -62,12 +67,13 @@ export async function updateOpportunity(
 }
 
 export async function getOpportunity(id: string) {
-  return prisma.opportunity.findUnique({
+  const db = await getTenantPrisma();
+  return db.opportunity.findFirst({
     where: { id },
     include: {
-      account:    true,
-      contact:    true,
-      stage:      true,
+      customer:    true,
+      contact:     true,
+      stage:       true,
       activities: { orderBy: { createdAt: 'desc' } },
     },
   });
@@ -85,20 +91,21 @@ export async function getOpportunities(
   if (status) andClauses.push({ status: status as never });
   const where = andClauses.length > 0 ? { AND: andClauses } : {};
 
+  const db = await getTenantPrisma();
   const [items, total] = await Promise.all([
-    prisma.opportunity.findMany({
+    db.opportunity.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
       include: {
         stage: true,
-        account: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true } },
         contact: { select: { id: true, name: true } },
         _count: { select: { activities: true } },
       },
     }),
-    prisma.opportunity.count({ where }),
+    db.opportunity.count({ where }),
   ]);
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
@@ -121,10 +128,11 @@ export async function updateOpportunityStage(
     };
   }
 
-  // 2. Загрузить opportunity + целевую стадию.
+  const db = await getTenantPrisma();
+  // 2. Загрузить opportunity + целевую стадию (через findFirst — авто-фильтр по org).
   const [opp, newStage] = await Promise.all([
-    prisma.opportunity.findUnique({ where: { id: parsed.data.opportunityId } }),
-    prisma.stage.findUnique({ where: { id: parsed.data.newStageId } }),
+    db.opportunity.findFirst({ where: { id: parsed.data.opportunityId } }),
+    db.stage.findFirst({ where: { id: parsed.data.newStageId } }),
   ]);
   if (!opp) return { ok: false, error: 'opportunity_not_found' };
   if (!newStage) return { ok: false, error: 'stage_not_found' };
@@ -154,8 +162,8 @@ export async function updateOpportunityStage(
     : 'open';
   const newCloseDate: Date | null = isFinal ? new Date() : null;
 
-  // 6. Обновить opportunity.
-  const updated = await prisma.opportunity.update({
+  // 6. Обновить opportunity (single update — только ПОСЛЕ findFirst-проверки tenant).
+  const updated = await db.opportunity.update({
     where: { id: opp.id },
     data: {
       stageId:    newStage.id,

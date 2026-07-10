@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getOpportunities } from '@/lib/opportunities';
 import { getStages } from '@/lib/stages';
-import { getAccounts } from '@/lib/accounts';
+import { getCustomers } from '@/lib/customers';
 import { getContacts } from '@/lib/contacts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
@@ -47,14 +47,14 @@ export default async function OpportunitiesPage({
   const stages = await getStages();
   const stageId = sp.stage ? stages.find((s) => s.name === sp.stage)?.id : undefined;
 
-  const [{ items, page, totalPages, total }, accountsPage, contactsPage] = await Promise.all([
+  const [{ items, page, totalPages, total }, customersPage, contactsPage] = await Promise.all([
     getOpportunities({
       q:       sp.q,
       stageId: stageId,
       status:  sp.status,
       page:    sp.page ? Number(sp.page) : 1,
     }),
-    getAccounts({ limit: 100 }),
+    getCustomers({ limit: 100 }),
     getContacts({ limit: 100 }),
   ]);
 
@@ -83,7 +83,7 @@ export default async function OpportunitiesPage({
         <div className="sm:ml-auto">
           <CreateOpportunityForm
             stages={stages}
-            accounts={accountsPage.items}
+            customers={customersPage.items}
             contacts={contactsPage.items}
           />
         </div>
@@ -130,7 +130,7 @@ export default async function OpportunitiesPage({
                   <td className="px-3 py-2">
                     <Badge kind="oppStatus" variant={opp.status} value={opp.status} />
                   </td>
-                  <td className="px-3 py-2 hidden sm:table-cell">{opp.account?.name ?? '—'}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell">{opp.customer?.name ?? '—'}</td>
                   <td className="px-3 py-2 hidden sm:table-cell">{opp.contact?.name ?? '—'}</td>
                 </tr>
               ))

@@ -15,11 +15,11 @@ export function ContactForm({ contact }: { contact: Contact }) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const input = {
-      name:      String(fd.get('name') ?? ''),
-      email:     String(fd.get('email') ?? '') || undefined,
-      phone:     String(fd.get('phone') ?? '') || undefined,
-      role:      String(fd.get('role') ?? '') || undefined,
-      accountId: String(fd.get('accountId') ?? '') || undefined,
+      name:       String(fd.get('name') ?? ''),
+      email:      String(fd.get('email') ?? '') || undefined,
+      phone:      String(fd.get('phone') ?? '') || undefined,
+      role:       String(fd.get('role') ?? '') || undefined,
+      customerId: String(fd.get('customerId') ?? '') || undefined,
     };
     start(async () => {
       const res = await updateContact(contact.id, input);

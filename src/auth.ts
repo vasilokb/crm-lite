@@ -38,6 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           active.activeOrganizationId = m.organizationId;
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (session.user as any).activeOrganizationId = active?.activeOrganizationId ?? null;
       return session;
     },

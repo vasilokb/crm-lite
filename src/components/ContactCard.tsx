@@ -1,11 +1,11 @@
 import { DrawerHeader } from './DrawerHeader';
 import { ContactForm } from './ContactForm';
-import type { Account, Contact, Opportunity } from '@prisma/client';
+import type { Customer, Contact, Opportunity } from '@prisma/client';
 import Link from 'next/link';
 import { stageLabel } from '@/lib/labels';
 
 type ContactFull = Contact & {
-  account: Account | null;
+  customer: Customer | null;
   opportunities: Array<Opportunity & { stage: { name: string } }>;
 };
 
@@ -21,17 +21,17 @@ export function ContactCard({ contact }: { contact: ContactFull }) {
         <ContactForm contact={contact} />
       </div>
 
-      {contact.account && (
+      {contact.customer && (
         <section className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
           <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Компания
           </h3>
           <p className="text-sm">
             <Link
-              href={`/accounts/${contact.account.id}`}
+              href={`/customers/${contact.customer.id}`}
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
             >
-              {contact.account.name}
+              {contact.customer.name}
             </Link>
           </p>
         </section>

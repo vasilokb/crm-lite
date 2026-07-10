@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateAccount } from '@/lib/accounts';
-import type { Account } from '@prisma/client';
+import { updateCustomer } from '@/lib/customers';
+import type { Customer } from '@prisma/client';
 
-export function AccountForm({ account }: { account: Account }) {
+export function CustomerForm({ customer }: { customer: Customer }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -20,7 +20,7 @@ export function AccountForm({ account }: { account: Account }) {
       industry: String(fd.get('industry') ?? '') || undefined,
     };
     start(async () => {
-      const res = await updateAccount(account.id, input);
+      const res = await updateCustomer(customer.id, input);
       if (res.ok) {
         setErrors({});
         setOk(true);
@@ -34,9 +34,9 @@ export function AccountForm({ account }: { account: Account }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-4">
-      <Field name="name"     label="Название"  required defaultValue={account.name}                            errors={errors.name} />
-      <Field name="website"  label="Сайт (URL)"             defaultValue={account.website ?? ''}                  errors={errors.website} />
-      <Field name="industry" label="Отрасль"                defaultValue={account.industry ?? ''}                 errors={errors.industry} />
+      <Field name="name"     label="Название"  required defaultValue={customer.name}                            errors={errors.name} />
+      <Field name="website"  label="Сайт (URL)"             defaultValue={customer.website ?? ''}                  errors={errors.website} />
+      <Field name="industry" label="Отрасль"                defaultValue={customer.industry ?? ''}                 errors={errors.industry} />
 
       {ok && (
         <p className="text-sm text-emerald-700 dark:text-emerald-300">Сохранено.</p>

@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { createAccount } from '@/lib/accounts';
+import { createCustomer } from '@/lib/customers';
 import { Drawer } from '@/components/Drawer';
 import { DrawerHeader } from '@/components/DrawerHeader';
 
-export function CreateAccountForm() {
+export function CreateCustomerForm() {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function CreateAccountForm() {
       industry: String(formData.get('industry') ?? '') || undefined,
     };
     start(async () => {
-      const result = await createAccount(input);
+      const result = await createCustomer(input);
       if (!result.ok) {
         if (result.fieldErrors) {
           setFieldErrors(result.fieldErrors);
@@ -56,7 +56,7 @@ export function CreateAccountForm() {
 
   return (
     <Drawer onClose={close}>
-      <DrawerHeader entity="account" title="Новая компания" />
+      <DrawerHeader entity="customer" title="Новая компания" />
       <form action={handleSubmit} className="flex flex-col gap-4 px-6 py-4">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-zinc-700 dark:text-zinc-300">

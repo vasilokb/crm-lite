@@ -12,10 +12,11 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-  // A7: запрет сырого prisma вне db.ts/auth (tenant-изоляция)
+  // A7: запрет сырого prisma вне db.ts/auth (tenant-изоляция).
+  // src/auth.ts тоже исключён: PrismaAdapter требует сырой prisma.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
-    ignores: ['src/lib/db.ts', 'src/lib/auth/**'],
+    ignores: ['src/lib/db.ts', 'src/lib/auth/**', 'src/auth.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [{
@@ -24,6 +25,15 @@ const eslintConfig = defineConfig([
           message: "Импортируйте getTenantPrisma() из '@/lib/auth/session', не сырой prisma",
         }],
       }],
+    },
+  },
+  // scripts/* — это smoke/utility-скрипты, не часть приложения.
+  // Лояльнее к 'any' и неиспользованным переменным.
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 ]);

@@ -30,7 +30,7 @@
 | A5. Auth.js v5: config + adapter + callbacks | B | [x] | [x] | 2026-07-10 — Auth.js v5 + database-session + getCurrentUser/getCurrentOrgId |
 | A6. Контекст сессии: `getCurrentUser`/`getCurrentOrgId` | B | [x] | [x] | 2026-07-10 — см. A5 |
 | A7. Tenant-клиент `createTenantPrisma` + ESLint | B | [x] | [x] | 2026-07-10 — createTenantPrisma + ESLint no-restricted-imports |
-| A8. Рефакторинг кода: server actions + rename (backend+UI) | B+F | [ ] | [ ] | **точка восстановления сборки**; `prisma.*`→`getTenantPrisma()`, `findUnique`→`findFirst`, `upsert` compound, `account`→`customer` в коде/роутах/типах |
+| A8. Рефакторинг кода: server actions + rename (backend+UI) | B+F | [x] | [x] | 2026-07-10 — server actions на getTenantPrisma() + rename account→customer (code/UI); сборка восстановлена (tsc+lint green) |
 | A9. Auth UI: login/register/invite + workspace + guards | F+B | [ ] | [ ] | `(app)`-group guard, `switchWorkspace`, `/invite/[token]` |
 | A10. Приёмка: изоляция 2 org + сценарий final-mvp + lint/build | F+B+D | [ ] | [ ] | контрольный сценарий проходит под owner |
 
