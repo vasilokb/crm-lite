@@ -142,3 +142,82 @@ model Activity {
   @@index([opportunityId])
   @@index([done, dueDate])
 }
+// ===== IDENTITY + TENANCY (фаза A1) =====
+enum MembershipRole {
+  owner
+  member
+}
+
+enum MembershipStatus {
+  active
+  pending
+}
+
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  sessions      Session[]
+  memberships   Membership[]
+  // accounts Account[]      — добавится в A3 (после rename CRM Account->Customer)
+  // ownedLeads Lead[]       — добавится в A2 (вместе с Lead.ownerUserId)
+}
+
+model Session {
+  id                   String        @id @default(cuid())
+  sessionToken         String        @unique
+  userId               String
+  expires              DateTime
+  activeOrganizationId String?
+  organization         Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  invites     InviteToken[]
+  sessions    Session[]
+  // customers/leads/contacts/opportunities/activities/stages — добавятся в A2
+}
+
+model Membership {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MembershipRole   @default(member)
+  status         MembershipStatus @default(active)
+  createdAt      DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model InviteToken {
+  id             String         @id @default(cuid())
+  organizationId String
+  email          String
+  role           MembershipRole @default(member)
+  token          String         @unique
+  expiresAt      DateTime
+  createdAt      DateTime       @default(now())
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId])
+}

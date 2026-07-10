@@ -1,54 +1,77 @@
-# Phase A3 — Rename `Account` → `Customer` · D
+# Phase A3 — Rename `Account` → `Customer` + Auth.js `Account` · D
 
-> Детальный план для фазы A3 из [`../../auth-plan.md`](../../auth-plan.md) §9.
-> **Контекст для агента:** прочитай [`../../auth-architecture-v4.md`](../../auth-architecture-v4.md) §9.1 + [`../../auth-implementation.md`](../../auth-implementation.md) §3.3. Фаза A2 уже `[x]`.
+> Детальный план для фазы A3 из [`auth-plan.md`](auth-plan.md) §9.
+> **Контекст для агента:** прочитай [`../../auth-architecture-v4.md`](../../auth-architecture-v4.md) §9.1 + [`../../auth-implementation.md`](../../auth-implementation.md) §2, §3.3. Фаза A2 уже `[x]`.
 
 ## 1. Что делаем
 
-Переименовать таблицу `Account` (CRM-домен «компания-заказчик») в `Customer`, чтобы устранить конфликт имён с `Account` от Auth.js. Данные должны сохраниться (НЕ drop+create).
+Две сцепленные задачи в одной фазе (общее имя `Account`):
+
+1. **Переименовать CRM-таблицу `Account` (компания-заказчик) → `Customer`** — устранить конфликт имён с Auth.js; данные сохранить (НЕ drop+create).
+2. **Добавить Auth.js-модель `Account` (OAuth-привязки) + `User.accounts`** — её **отложили из A1** именно из-за конфликта; теперь, когда CRM-имя `Account` освобождено rename-ом, добавляем.
+
+> Auth.js `Account` сейчас пустая (OAuth отложен), но нужна `@auth/prisma-adapter` для типов/контракта.
 
 ## 2. Артефакты
 
-В `prisma/schema.prisma` модель уже объявлена как `Customer` (см. целевую схему в `auth-implementation.md` §2). Миграция — ручная:
+### 2.1. `prisma/schema.prisma`
+- CRM-модель `Account` → переименовать в `Customer` (поля без изменений; `@@unique([organizationId, name])` уже из A2).
+- Добавить Auth.js-модель `Account` (пустая, под OAuth на будущее):
+```prisma
+model Account {                                // Auth.js OAuth-привязки
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+```
+- В `User` добавить `accounts Account[]` (в A1 было закомментировано/отложено).
 
+### 2.2. Миграция (ручная правка авто-генерации)
 ```bash
 npx prisma migrate dev --create-only --name rename_account_to_customer
 ```
+Prisma не различает rename и drop+create → сгенерирует `DROP TABLE "Account"` + `CREATE TABLE "Customer"` + `CREATE TABLE "Account"` (Auth.js). **DROP+CREATE для Customer заменяем на `ALTER TABLE RENAME`** (сохранить данные), а `CREATE TABLE "Account"` (Auth.js) оставляем как есть:
 
-`prisma/migrations/<ts>_rename_account_to_customer/migration.sql`:
 ```sql
+-- 1. Переименовать CRM-таблицу (ДАННЫЕ СОХРАНЯЮТСЯ)
 ALTER TABLE "Account" RENAME TO "Customer";
-
--- индексы/констрейнты остались по старым именам (работают); при желании переименовать:
 ALTER INDEX IF EXISTS "Account_organizationId_name_key" RENAME TO "Customer_organizationId_name_key";
 ALTER INDEX IF EXISTS "Account_organizationId_idx" RENAME TO "Customer_organizationId_idx";
--- FK Contact.accountId / Opportunity.accountId продолжают ссылаться на ту же таблицу (теперь Customer) —
--- Prisma перегенерирует имена при `prisma generate`; связи по значению не меняются.
+
+-- 2. Auth.js Account (новая, пустая) — оставить сгенерированное Prisma:
+--    CREATE TABLE "Account" (id TEXT PRIMARY KEY, "userId" TEXT NOT NULL, type TEXT, provider TEXT, ...);
+--    CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"(provider, "providerAccountId");
+--    ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE;
 ```
 
-Применить:
-```bash
-npx prisma migrate dev
-npx prisma generate
-```
+Применить: `npx prisma migrate dev` → `npx prisma generate`.
 
 ## 3. Порядок
-Фаза A3 ПОСЛЕ A2 (per-tenant unique на `Account.name` уже применён к таблице `Account`, переименование сохраняет структуру).
+A3 ПОСЛЕ A2 (per-tenant unique на CRM `Account.name` уже применён). Rename CRM + добавление Auth.js `Account` — в одной миграции: имя `Account` освобождается `ALTER TABLE RENAME` и тут же занимается Auth.js-таблицей.
 
 ## 4. Test-критерии (только БД — сборка ещё сломана до A8)
 
 - `prisma migrate status` — clean.
-- `SELECT to_regclass('public."Customer"');` → не null; `SELECT to_regclass('public."Account"');` → null.
-- Данные сохранены: `SELECT count(*) FROM "Customer";` == 4 (seed) / как было.
-- Scoped tsx (проверка клиента без компиляции всего проекта):
-```bash
-npx tsx -e "import { prisma } from './src/lib/db'; const c = await prisma.customer.findFirst(); console.log('Customer ok:', !!c);"
-```
-- **Whole-project `tsc` НЕ гейт здесь** (он сломан A2→A8): серверный код ещё ссылается на `prisma.account`/тип `Account` — чинится в A8. Здесь — только БД + `prisma generate` отработал и `prisma.customer` доступен.
+- `SELECT to_regclass('public."Customer"');` → не null; `SELECT to_regclass('public."Account"');` → не null (Auth.js, пустая).
+- Данные CRM сохранены: `SELECT count(*) FROM "Customer";` == 4 (seed) / как было.
+- `SELECT count(*) FROM "Account";` == 0 (Auth.js, пустая).
+- Scoped tsx: `prisma.customer.findFirst()` и `prisma.account.findFirst()` доступны.
+- **Whole-project `tsc` НЕ гейт здесь** (сломан A2→A8): серверный код ещё ссылается на `prisma.account`/тип `Account` в смысле CRM — чинится в A8. Здесь — БД + `prisma generate` отработал, оба клиента (`prisma.customer`, `prisma.account`) доступны.
 
 ## 5. Коммит
 ```bash
 git add prisma/migrations/<ts>_rename_account_to_customer/ prisma/schema.prisma
-git commit -m "feat(db): rename Account → Customer (конфликт с Auth.js) — фаза A3"
+git commit -m "feat(db): rename Account→Customer + add Auth.js Account model — фаза A3"
 ```
 После Test — `[x]` в `auth-plan.md` §2 (A3).

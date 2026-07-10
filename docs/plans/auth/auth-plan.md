@@ -23,7 +23,7 @@
 
 | Фаза | Слой | Статус | Закрыта | Комментарий |
 |---|---|---|---|---|
-| A1. Миграция: identity + tenancy (новые таблицы) | D | [ ] | [ ] | авто-миграция, низкий риск |
+| A1. Миграция: identity + tenancy (новые таблицы) | D | [x] | [x] | 2026-07-10 · `20260710055939_add_identity_and_tenancy` — добавлены `User`, `Session`, `VerificationToken`, `Organization`, `Membership`, `InviteToken` + enum `MembershipRole`/`MembershipStatus`; бизнес-модели не тронуты. Enum-блоки пришлось сделать многострочными (Prisma 6.19.3 не парсит однострочные `enum X { a b }`). Перед миграцией удалены 2 орфан-записи (`20260705105753_*` с NULL finished_at) из `_prisma_migrations` — мешали `migrate dev`. |
 | A2. Миграция: tenant-scoping бизнес-таблиц (ручной SQL) | D | [ ] | [ ] | высокий риск; **после A2 сборка проекта сломана** до A8 |
 | A3. Миграция: rename таблицы `Account` → `Customer` | D | [ ] | [ ] | `ALTER TABLE RENAME`; кодовое переименование — в A8 |
 | A4. Обновление seed под multi-tenant | D | [ ] | [ ] | default Organization + owner + organizationId всем строкам |
