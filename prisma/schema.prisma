@@ -48,53 +48,79 @@ model Lead {
   company   String?
   source    LeadSource
   status    LeadStatus @default(new)
-  owner     String?
   budget    Float?
   timeline  String?
   comment   String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  ownerUserId String?
+  owner       User?   @relation("LeadOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+
   opportunity Opportunity?
 
   @@index([source])
   @@index([status])
+  @@index([organizationId])
+  @@index([ownerUserId])
 }
 
 model Stage {
   id       String         @id @default(cuid())
-  name     String         @unique
-  position Int            @unique
+  name     String
+  position Int
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   opportunities Opportunity[]
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
+  @@unique([organizationId, position])
 }
 
 model Account {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   website   String?
   industry  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   contacts      Contact[]
   opportunities Opportunity[]
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
 }
 
 model Contact {
   id        String   @id @default(cuid())
   name      String
-  email     String?  @unique
+  email     String?
   phone     String?
   role      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   accountId String?
   account   Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
   opportunities Opportunity[]
 
+  @@index([organizationId])
   @@index([accountId])
+  @@unique([organizationId, email])
 }
 
 model Opportunity {
@@ -108,8 +134,11 @@ model Opportunity {
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   stageId String
-  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: Restrict)
 
   leadId String? @unique
   lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
@@ -122,6 +151,7 @@ model Opportunity {
 
   activities Activity[]
 
+  @@index([organizationId])
   @@index([stageId])
   @@index([status])
   @@index([accountId])
@@ -136,9 +166,13 @@ model Activity {
   done      Boolean      @default(false)
   createdAt DateTime     @default(now())
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   opportunityId String
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
 
+  @@index([organizationId])
   @@index([opportunityId])
   @@index([done, dueDate])
 }
@@ -164,8 +198,8 @@ model User {
   createdAt     DateTime  @default(now())
   sessions      Session[]
   memberships   Membership[]
+  ownedLeads    Lead[]    @relation("LeadOwner")
   // accounts Account[]      — добавится в A3 (после rename CRM Account->Customer)
-  // ownedLeads Lead[]       — добавится в A2 (вместе с Lead.ownerUserId)
 }
 
 model Session {
@@ -194,7 +228,12 @@ model Organization {
   memberships Membership[]
   invites     InviteToken[]
   sessions    Session[]
-  // customers/leads/contacts/opportunities/activities/stages — добавятся в A2
+  accounts       Account[]
+  leads          Lead[]
+  stages         Stage[]
+  contacts       Contact[]
+  opportunities  Opportunity[]
+  activities     Activity[]
 }
 
 model Membership {

@@ -1,0 +1,66 @@
+# Phase A2 — Tenant-scoping бизнес-таблиц (ручной SQL) · D
+
+> Детальный план для фазы A2 из [`../../auth-plan.md`](../../auth-plan.md) §9. Открывается перед стартом фазы.
+> **Контекст для агента:** прочитай [`../../auth-architecture-v4.md`](../../auth-architecture-v4.md) §5.2 + [`../../auth-implementation.md`](../../auth-implementation.md) §3.2. Фаза A1 (новые таблицы) уже `[x]`.
+
+## 1. Что делаем
+
+Добавить `organizationId` (NOT NULL + FK + индекс) на 6 бизнес-таблицах и перевести глобальные unique в per-tenant. `prisma migrate dev` упадёт на NOT NULL без default → миграция ручная.
+
+## 2. Артефакты — SQL миграции
+
+```bash
+npx prisma migrate dev --create-only --name tenant_scope_business
+```
+
+Открыть сгенерированный `prisma/migrations/<ts>_tenant_scope_business/migration.sql` и **полностью заменить** на шаблон ниже (полный SQL — в `auth-implementation.md` §3.2 и в промпте A2).
+
+```sql
+-- 0. Гарантировать наличие Organization для backfill (для existing seed-данных)
+INSERT INTO "Organization"(id,name,slug,"createdAt","updatedAt")
+SELECT gen_random_uuid()::text,'Demo Agency','demo-agency',now(),now()
+WHERE NOT EXISTS (SELECT 1 FROM "Organization");
+-- (если локальный PG <13 и gen_random_uuid недоступен — заменить на md5(random()::text||clock_timestamp()::text))
+
+-- паттерн на каждую бизнес-таблицу (backfill через subquery — без session-state):
+ALTER TABLE "Lead" ADD COLUMN "organizationId" TEXT;
+UPDATE "Lead" SET "organizationId" = (SELECT id FROM "Organization" ORDER BY "createdAt" LIMIT 1);
+ALTER TABLE "Lead" ALTER COLUMN "organizationId" SET NOT NULL;
+ALTER TABLE "Lead" ADD CONSTRAINT "Lead_organizationId_fkey"
+  FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE;
+CREATE INDEX "Lead_organizationId_idx" ON "Lead"("organizationId");
+```
+
+**Специфика по таблицам:**
+- `Lead`: `owner String?` → `ownerUserId` — **DROP COLUMN "owner" + ADD COLUMN "ownerUserId" TEXT + FK → User ON DELETE SET NULL** (НЕ `RENAME` — rename перенёс бы строковые имена менеджеров в `ownerUserId` и сломал FK на seed-данных). `+ @@index([ownerUserId])`.
+- `Stage`: `DROP INDEX IF EXISTS "Stage_name_key"`, `DROP INDEX IF EXISTS "Stage_position_key"` → `CREATE UNIQUE INDEX "Stage_organizationId_name_key"`, `"..._position_key"`.
+- `Account`: `DROP INDEX IF EXISTS "Account_name_key"` → `CREATE UNIQUE INDEX "Account_organizationId_name_key"`.
+- `Contact`: `DROP INDEX IF EXISTS "Contact_email_key"` → `CREATE UNIQUE INDEX "Contact_organizationId_email_key"`.
+- `Opportunity`: пересоздать `Opportunity_stageId_fkey` с `ON DELETE RESTRICT` (было `SetNull` — баг NOT NULL+SetNull): `DROP CONSTRAINT IF EXISTS` + `ADD CONSTRAINT ... ON DELETE RESTRICT`.
+- `Activity`: только `+organizationId`.
+
+## 3. Порядок критичен
+`Organization` (фаза A1) должна существовать ДО NOT NULL `organizationId`. Все FK → `Organization` `ON DELETE CASCADE` (v4 §12).
+
+> **Плановая поломка сборки:** после A2 `Account.name` перестаёт быть глобально-уникальным → `convertLead` (`upsert({where:{name}})`/`findUnique({name})`) и любой lookup по имени перестают компилироваться. Это нормально — код адаптируется в A8. В A2–A7 Test = только DB-проверки; whole-project `tsc` — гейт с A8.
+
+## 4. Test-критерии (только БД — сборка сломана до A8)
+
+```bash
+npx prisma validate       # exit 0, БЕЗ warning про SetNull (Opportunity.stage теперь Restrict)
+npx prisma migrate dev    # применить миграцию к текущей (seeded) БД
+npx prisma migrate status # clean
+```
+- `prisma studio`: на каждой из 6 бизнес-таблиц есть `organizationId NOT NULL`, FK, индекс; у всех seed-строк `organizationId` заполнен (= Demo Agency).
+- per-tenant unique (scoped tsx): две строки с одинаковым `[organizationId, name]` → P2002; с разными `organizationId` — ок.
+- `Lead`: колонки `owner` нет, `ownerUserId` есть (nullable, FK→User); seed-лиды имеют `ownerUserId = NULL` (заполнится в A4).
+- `Opportunity.stageId` FK → `RESTRICT` (проверить DDL).
+- Данные не потеряны: `SELECT count(*)` по Lead/Account/Contact/Opportunity/Activity/Stage == seed (6/4/5/6/8/5).
+- **Whole-project `tsc` НЕ гейт** — ожидаемо красный до A8.
+
+## 5. Коммит
+```bash
+git add prisma/migrations/<ts>_tenant_scope_business/ prisma/schema.prisma
+git commit -m "feat(db): tenant-scoping бизнес-таблиц (organizationId + per-tenant unique) — фаза A2"
+```
+После прохождения Test — отметить `[x]` в `auth-plan.md` §2 (A2).
