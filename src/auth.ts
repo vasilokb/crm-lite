@@ -6,7 +6,9 @@ import { prisma } from '@/lib/db';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  // JWT обязателен для Credentials в Auth.js v5 (database-session не поддерживает Credentials).
+  // activeOrganizationId всё ещё храним в БД (Session-таблица) и подтягиваем в jwt-callback.
+  session: { strategy: 'jwt' },
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
@@ -19,27 +21,62 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      session.user = { ...session.user, id: user.id };
-      // activeOrganizationId живёт на Session; если пусто — авто-выбор первой активной membership
-      // (owner после register / member после invite имеют одну активную org)
-      const active = await prisma.session.findFirst({
-        where: { userId: user.id, expires: { gt: new Date() } },
-        orderBy: { expires: 'desc' },
-        select: { id: true, activeOrganizationId: true },
-      });
-      if (active && !active.activeOrganizationId) {
-        const m = await prisma.membership.findFirst({
-          where: { userId: user.id, status: 'active' },
-          orderBy: { createdAt: 'asc' },
+    // При первом sign-in user есть — кладём id в token.
+    // На каждом запросе — подтягиваем актуальный activeOrganizationId из последней активной Session.
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = (user as { id: string }).id;
+      }
+      if (token.id) {
+        const userId = token.id as string;
+        // Берём самую свежую активную Session пользователя (по expires desc).
+        // switchWorkspace (A9) делает session.updateMany для всех живых сессий — этого достаточно.
+        const s = await prisma.session.findFirst({
+          where: { userId, expires: { gt: new Date() } },
+          orderBy: { expires: 'desc' },
+          select: { id: true, activeOrganizationId: true },
         });
-        if (m) {
-          await prisma.session.update({ where: { id: active.id }, data: { activeOrganizationId: m.organizationId } });
-          active.activeOrganizationId = m.organizationId;
+        if (s && s.activeOrganizationId) {
+          // Счастливый путь: Session есть и activeOrganizationId заполнен.
+          token.activeOrganizationId = s.activeOrganizationId;
+        } else {
+          // Авто-выбор первой активной membership (для юзеров, у которых Session не создалась при signIn —
+          // например, после миграции с database-session на JWT, или для свежезарегенных).
+          const m = await prisma.membership.findFirst({
+            where: { userId, status: 'active' },
+            orderBy: { createdAt: 'asc' },
+            select: { organizationId: true },
+          });
+          if (m) {
+            const activeOrganizationId = m.organizationId;
+            if (s) {
+              await prisma.session.update({
+                where: { id: s.id },
+                data: { activeOrganizationId },
+              });
+            } else {
+              await prisma.session.create({
+                data: {
+                  sessionToken: `jwt-${token.jti ?? userId}-${Date.now()}`,
+                  userId,
+                  expires: new Date(Date.now() + 30 * 864e5),
+                  activeOrganizationId,
+                },
+              });
+            }
+            token.activeOrganizationId = activeOrganizationId;
+          } else {
+            token.activeOrganizationId = null;
+          }
         }
       }
+      return token;
+    },
+    async session({ session, token }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (session.user as any).activeOrganizationId = active?.activeOrganizationId ?? null;
+      (session.user as any).id = token.id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (session.user as any).activeOrganizationId = token.activeOrganizationId ?? null;
       return session;
     },
   },
