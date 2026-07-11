@@ -226,3 +226,23 @@ npm run dev         # http://localhost:3001
 ---
 
 **Открытые вопросы** по проекту — [`Plan.md`](Plan.md) §13. Перед стартом фазы 2/3 их нужно подтвердить с пользователем.
+
+---
+
+## 1.9 Документация (карта)
+
+> **Порядок чтения для нового разработчика/архитектора:** этот `README.md` → [`docs/architecture.md`](docs/architecture.md) → [`docs/architecture-code.md`](docs/architecture-code.md). **Авторитетно:** README + код; design-документы ниже могут отставать (особенно по стратегии сессии — см. [`architecture.md`](docs/architecture.md) §4).
+
+| Документ | Что внутри |
+|---|---|
+| `README.md` | entry-point: проект, стек+версии, запуск, тестовые аккаунты, бизнес-правила, auth-кратко, ограничения |
+| `docs/architecture.md` | контейнерная диаграмма + потоки + модель данных + auth (**JWT**) — текущая архитектура |
+| `docs/architecture-components.md` | компонентная диаграмма (слои) |
+| `docs/architecture-code.md` | серверный код: реальные файлы и импорты |
+| `docs/auth-architecture-v4.md` | дизайн-обоснование auth/multi-tenant (design-time; стратегия сессии устарела — см. architecture.md §4) |
+| `docs/auth-implementation.md` | спецификация реализации (schema/SQL/код; design-time) |
+| `docs/final-mvp.md` | контракт CRM-MVP (бизнес-требования) |
+| `Plan.md` | главный план CRM-MVP (бизнес-правила §6) |
+| `docs/plans/auth/auth-plan.md` + `phase-*.md` | пофазный план auth (A1–A10) |
+| `TEST_REPORT.md` | отчёт приёмки auth |
+| `DEPLOY-GUIDE.md` | деплой (Vercel/Neon) |
