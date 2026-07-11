@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { signIn } from '@/auth';
-import { seedDefaultStages } from '@/lib/stages';
+import { seedDefaultStages, seedDemoData } from '@/lib/stages';
 
 export type RegisterResult = { error?: string };
 
@@ -51,6 +51,10 @@ export async function registerAction(
       // Onboarding: 5 дефолтных стадий воронки для новой организации.
       // Без этого getStages() вернёт [] → createOpportunity/convertLead не работают.
       await seedDefaultStages(tx, org.id);
+      // Демо-данные: 2 компании/контакта, 2 лида, 2 сделки, 2 активности +
+      // 2 демо-участника команды (Jane Doe, John Doe, пароль `demo1234`).
+      // Учебный проект: в реальном B2B — вынести в опцию.
+      await seedDemoData(tx, org.id, user.id, org.slug);
       await tx.membership.create({
         data: {
           userId: user.id,

@@ -13,6 +13,8 @@ CRM-lite — локальное однопользовательское веб-
 
 **Режим работы:** локальный, один пользователь, без аутентификации, без realtime.
 
+> С A9 — мультитенантность с Auth.js: одна регистрация = одна компания; в неё автоматически добавляются 2 демо-участника (`jane.doe+<orgSlug>@demo.example`, `john.doe+<orgSlug>@demo.example`, пароль `demo1234`) и 2 лида/компании/контакта/сделки/активности. См. `src/lib/stages.ts` (`seedDemoData`). В реальном B2B так делать нельзя — фейковые loginable-юзеры; позже вынести в опцию.
+
 **Обязательные сущности CRM-lite:** `Lead`, `Account`, `Contact`, `Stage`, `Opportunity`, `Activity` (см. [`Plan.md`](Plan.md) §6.1, [`docs/final-mvp.md`](docs/final-mvp.md) §3.1).
 
 ## 1.2 Стек
