@@ -48,7 +48,7 @@ export default async function TeamPage() {
         />
       </section>
 
-      {isOwner && (
+      {isOwner && invites.length > 0 && (
         <section>
           <h2 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Висящие приглашения ({invites.length})

@@ -188,7 +188,13 @@ export function MembersTable({
             const isSelf = m.user.id === currentUserId;
             return (
               <tr key={m.id} className="border-b border-zinc-100 dark:border-zinc-800">
-                <td className="py-2">{m.user.name?.trim() || <span className="text-zinc-400">—</span>}</td>
+                <td className="py-2">
+                  {(() => {
+                    const n = m.user.name?.trim();
+                    const display = n && n !== m.user.email ? n : null;
+                    return display ?? <span className="text-zinc-400 dark:text-zinc-500">Имя не указано</span>;
+                  })()}
+                </td>
                 <td className="py-2 text-zinc-600 dark:text-zinc-400">{m.user.email}</td>
                 <td className="py-2">
                   {isOwner && !isSelf ? (
@@ -216,7 +222,7 @@ export function MembersTable({
                 {isOwner && (
                   <td className="py-2 text-right">
                     {isSelf ? (
-                      <span className="text-xs text-zinc-400">(это вы)</span>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500">(это вы)</span>
                     ) : (
                       <button
                         type="button"

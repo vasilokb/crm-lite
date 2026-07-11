@@ -171,11 +171,8 @@ export function NavHeader({ user, activeOrgId, memberships }: Props) {
                 className="absolute right-0 top-full mt-1 z-40 min-w-[220px] rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg py-1"
               >
                 <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Текущая организация
-                  </p>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                    {activeMembership?.organization.name ?? '—'}
+                    {user?.name?.trim() || user?.email}
                   </p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                     {user?.email}
