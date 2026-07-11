@@ -21,7 +21,7 @@ export function ConvertLeadAccordion({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null);
   const [success, setSuccess] = useState<{
-    accountId: string;
+    customerId: string;
     contactId: string;
     opportunityId: string | null;
   } | null>(null);
@@ -45,10 +45,10 @@ export function ConvertLeadAccordion({
           Лид сконвертирован. Созданы:
         </p>
         <Link
-          href={`/accounts/${success.accountId}`}
+          href={`/customers/${success.customerId}`}
           className="block text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
         >
-          → Account
+          → Customer
         </Link>
         <Link
           href={`/contacts/${success.contactId}`}
@@ -95,8 +95,8 @@ export function ConvertLeadAccordion({
         return;
       }
       setSuccess({
-        accountId:    result.accountId,
-        contactId:    result.contactId,
+        customerId:    result.customerId,
+        contactId:     result.contactId,
         opportunityId: result.opportunityId,
       });
       setOpen(false);

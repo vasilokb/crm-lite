@@ -59,7 +59,7 @@ export const TABLE_HEADERS = {
     company: 'Компания',
     created: 'Создан',
   },
-  accounts: {
+  customers: {
     name: 'Название',
     website: 'Сайт',
     contacts: 'Контакты',

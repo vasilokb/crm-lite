@@ -3,11 +3,11 @@ import { OpportunityForm } from './OpportunityForm';
 import { StageProgressBar } from './StageProgressBar';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ActivityForm } from './ActivityForm';
-import type { Account, Activity, Contact, Opportunity, Stage } from '@prisma/client';
+import type { Customer, Activity, Contact, Opportunity, Stage } from '@prisma/client';
 import Link from 'next/link';
 
 type OpportunityFull = Opportunity & {
-  account: Account | null;
+  customer: Customer | null;
   contact: Contact | null;
   stage: Stage;
   activities: Activity[];
@@ -50,15 +50,15 @@ export function OpportunityCard({
           Связи
         </h3>
         <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm">
-          {opportunity.account && (
+          {opportunity.customer && (
             <>
               <dt className="text-zinc-500 dark:text-zinc-400">Компания:</dt>
               <dd>
                 <Link
-                  href={`/accounts/${opportunity.account.id}`}
+                  href={`/customers/${opportunity.customer.id}`}
                   className="text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
-                  {opportunity.account.name}
+                  {opportunity.customer.name}
                 </Link>
               </dd>
             </>

@@ -1,26 +1,26 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAccount } from '@/lib/accounts';
-import { AccountCard } from '@/components/AccountCard';
+import { getCustomer } from '@/lib/customers';
+import { CustomerCard } from '@/components/CustomerCard';
 
-export default async function AccountFullPage({
+export default async function CustomerFullPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const account = await getAccount(id);
-  if (!account) notFound();
+  const customer = await getCustomer(id);
+  if (!customer) notFound();
   return (
     <main className="p-6 max-w-4xl mx-auto">
       <Link
-        href="/accounts"
+        href="/customers"
         className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
       >
         ← К списку компаний
       </Link>
       <div className="mt-4 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-        <AccountCard account={account} />
+        <CustomerCard customer={customer} />
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 'use server';
 
 import { safeRevalidate } from './revalidate';
-import { prisma } from './db';
+import { getTenantPrisma } from '@/lib/auth/session';
 import {
   leadInputSchema,
   leadUpdateSchema,
@@ -14,7 +14,8 @@ import type { Lead } from '@prisma/client';
 export async function createLead(input: LeadInput): Promise<Result<Lead>> {
   const p = leadInputSchema.safeParse(input);
   if (!p.success) return { ok: false, fieldErrors: p.error.flatten().fieldErrors };
-  const lead = await prisma.lead.create({
+  const db = await getTenantPrisma();
+  const lead = await db.lead.create({
     data: {
       name:     p.data.name,
       email:    p.data.email || null,
@@ -25,7 +26,8 @@ export async function createLead(input: LeadInput): Promise<Result<Lead>> {
       budget:   typeof p.data.budget === 'number' ? p.data.budget : null,
       timeline: p.data.timeline || null,
       comment:  p.data.comment || null,
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
   });
   safeRevalidate('/leads');
   safeRevalidate('/dashboard');
@@ -48,7 +50,10 @@ export async function updateLead(id: string, input: LeadUpdate): Promise<Result<
   if (p.data.timeline !== undefined) data.timeline = p.data.timeline || null;
   if (p.data.comment !== undefined) data.comment = p.data.comment || null;
 
-  const lead = await prisma.lead.update({ where: { id }, data });
+  const db = await getTenantPrisma();
+  const existing = await db.lead.findFirst({ where: { id } });
+  if (!existing) return { ok: false, error: 'not_found' };
+  const lead = await db.lead.update({ where: { id }, data });
   safeRevalidate('/leads');
   safeRevalidate(`/leads/${id}`);
   safeRevalidate('/dashboard');
@@ -56,10 +61,11 @@ export async function updateLead(id: string, input: LeadUpdate): Promise<Result<
 }
 
 export async function getLead(id: string) {
-  return prisma.lead.findUnique({
+  const db = await getTenantPrisma();
+  return db.lead.findFirst({
     where: { id },
     include: {
-      opportunity: { include: { account: true, contact: true } },
+      opportunity: { include: { customer: true, contact: true } },
     },
   });
 }
@@ -81,14 +87,15 @@ export async function getLeads(
   if (status) andClauses.push({ status: status as never });
 
   const where = andClauses.length > 0 ? { AND: andClauses } : {};
+  const db = await getTenantPrisma();
   const [items, total] = await Promise.all([
-    prisma.lead.findMany({
+    db.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.lead.count({ where }),
+    db.lead.count({ where }),
   ]);
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
 }

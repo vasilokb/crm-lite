@@ -24,12 +24,12 @@ export function OpportunityForm({
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const input = {
-      title:     String(fd.get('title') ?? ''),
-      amount:    fd.get('amount') ? Number(fd.get('amount')) : undefined,
-      stageId:   String(fd.get('stageId') ?? opportunity.stageId),
-      accountId: opportunity.accountId ?? undefined,
-      contactId: opportunity.contactId ?? undefined,
-      dueDate:   fd.get('dueDate')
+      title:      String(fd.get('title') ?? ''),
+      amount:     fd.get('amount') ? Number(fd.get('amount')) : undefined,
+      stageId:    String(fd.get('stageId') ?? opportunity.stageId),
+      customerId: opportunity.accountId ?? undefined,
+      contactId:  opportunity.contactId ?? undefined,
+      dueDate:    fd.get('dueDate')
         ? new Date(String(fd.get('dueDate'))).toISOString()
         : undefined,
     };

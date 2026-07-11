@@ -1,5 +1,5 @@
 import { createLead, updateLead, getLead, getLeads } from '../src/lib/leads';
-import { createAccount, getAccount, getAccounts } from '../src/lib/accounts';
+import { createCustomer, getCustomer, getCustomers } from '../src/lib/customers';
 import { createContact, getContact, getContacts } from '../src/lib/contacts';
 import {
   createOpportunity,
@@ -59,8 +59,8 @@ async function run(): Promise<void> {
   const leadsList = await getLeads({ page: 1, limit: 50 });
   check(Array.isArray(leadsList.items), 'getLeads returns array');
 
-  const accountsList = await getAccounts({ page: 1, limit: 50 });
-  check(Array.isArray(accountsList.items), 'getAccounts returns array');
+  const customersList = await getCustomers({ page: 1, limit: 50 });
+  check(Array.isArray(customersList.items), 'getCustomers returns array');
 
   const contactsList = await getContacts({ page: 1, limit: 50 });
   check(Array.isArray(contactsList.items), 'getContacts returns array');

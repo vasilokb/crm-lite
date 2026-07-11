@@ -1,16 +1,15 @@
 import Link from 'next/link';
 import { getContacts } from '@/lib/contacts';
-import { getAccounts } from '@/lib/accounts';
+import { getCustomers } from '@/lib/customers';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
 import { CreateContactForm } from '@/components/CreateContactForm';
 import { TABLE_HEADERS } from '@/lib/labels';
 
-// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
 export const revalidate = 30;
 
-type SP = { q?: string; accountId?: string; page?: string };
+type SP = { q?: string; customerId?: string; page?: string };
 
 export default async function ContactsPage({
   searchParams,
@@ -18,18 +17,18 @@ export default async function ContactsPage({
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const [{ items, page, totalPages, total }, accountsPage] = await Promise.all([
+  const [{ items, page, totalPages, total }, customersPage] = await Promise.all([
     getContacts({
       q:         sp.q,
-      accountId: sp.accountId,
+      customerId: sp.customerId,
       page:      sp.page ? Number(sp.page) : 1,
     }),
-    getAccounts({ limit: 100 }),
+    getCustomers({ limit: 100 }),
   ]);
 
   const baseSearchParams: Record<string, string | undefined> = {
     q: sp.q,
-    accountId: sp.accountId,
+    customerId: sp.customerId,
   };
 
   return (
@@ -43,7 +42,7 @@ export default async function ContactsPage({
         <SearchInput placeholder="Поиск по имени или email…" />
         <FilterBar current={baseSearchParams} filters={[]} />
         <div className="sm:ml-auto">
-          <CreateContactForm accounts={accountsPage.items} />
+          <CreateContactForm customers={customersPage.items} />
         </div>
       </div>
 
@@ -77,7 +76,7 @@ export default async function ContactsPage({
                   </td>
                   <td className="px-3 py-2 hidden sm:table-cell">{c.email ?? '—'}</td>
                   <td className="px-3 py-2 hidden sm:table-cell">{c.phone ?? '—'}</td>
-                  <td className="px-3 py-2">{c.account?.name ?? '—'}</td>
+                  <td className="px-3 py-2">{c.customer?.name ?? '—'}</td>
                 </tr>
               ))
             )}

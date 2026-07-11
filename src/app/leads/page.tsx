@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getLeads } from '@/lib/leads';
-import { getAccounts } from '@/lib/accounts';
+import { getCustomers } from '@/lib/customers';
 import { getContacts } from '@/lib/contacts';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
@@ -24,14 +24,14 @@ export default async function LeadsPage({
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const [{ items, page, totalPages, total }, accountsPage, contactsPage] = await Promise.all([
+  const [{ items, page, totalPages, total }, customersPage, contactsPage] = await Promise.all([
     getLeads({
       q:        sp.q,
       source:   sp.source,
       status:   sp.status,
       page:     sp.page ? Number(sp.page) : 1,
     }),
-    getAccounts({ limit: 100 }),
+    getCustomers({ limit: 100 }),
     getContacts({ limit: 100 }),
   ]);
 
@@ -74,7 +74,7 @@ export default async function LeadsPage({
           ]}
         />
         <div className="sm:ml-auto">
-          <CreateLeadForm accounts={accountsPage.items} contacts={contactsPage.items} />
+          <CreateLeadForm customers={customersPage.items} contacts={contactsPage.items} />
         </div>
       </div>
 

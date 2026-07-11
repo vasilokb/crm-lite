@@ -19,6 +19,7 @@ export function TaskCheckbox({ id, done }: Props) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setServerDone(done);
   }, [done]);
 

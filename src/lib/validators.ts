@@ -25,29 +25,29 @@ export type LeadInput = z.infer<typeof leadInputSchema>;
 export const leadUpdateSchema = leadInputSchema.partial();
 export type LeadUpdate = z.infer<typeof leadUpdateSchema>;
 
-export const accountInputSchema = z.object({
+export const customerInputSchema = z.object({
   name:     trimmed(200),
   website:  z.string().trim().url().optional().or(z.literal('')),
   industry: optTrimmed(100),
 });
-export type AccountInput = z.infer<typeof accountInputSchema>;
+export type CustomerInput = z.infer<typeof customerInputSchema>;
 
 export const contactInputSchema = z.object({
-  name:      trimmed(120),
-  email:     z.string().trim().email().optional().or(z.literal('')),
-  phone:     optTrimmed(40),
-  role:      optTrimmed(100),
-  accountId: id.optional().or(z.literal('')),
+  name:       trimmed(120),
+  email:      z.string().trim().email().optional().or(z.literal('')),
+  phone:      optTrimmed(40),
+  role:       optTrimmed(100),
+  customerId: id.optional().or(z.literal('')),
 });
 export type ContactInput = z.infer<typeof contactInputSchema>;
 
 export const opportunityInputSchema = z.object({
-  title:     trimmed(200),
-  amount:    z.number().positive().optional(),
-  stageId:   id,
-  accountId: id.optional(),
-  contactId: id.optional(),
-  dueDate:   z.string().datetime().optional(),
+  title:      trimmed(200),
+  amount:     z.number().positive().optional(),
+  stageId:    id,
+  customerId: id.optional(),
+  contactId:  id.optional(),
+  dueDate:    z.string().datetime().optional(),
 });
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 

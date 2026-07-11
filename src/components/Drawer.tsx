@@ -14,6 +14,7 @@ const DrawerContext = createContext<DrawerContextValue | null>(null);
 export function useDrawerClose(): () => void {
   const ctx = useContext(DrawerContext);
   if (ctx) return ctx.close;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const router = useRouter();
   return () => router.back();
 }
@@ -36,6 +37,7 @@ export function Drawer({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

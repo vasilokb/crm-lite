@@ -1,15 +1,14 @@
 'use server';
 
 import { Prisma } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
-import { prisma } from './db';
-import { convertLeadSchema, type ConvertLeadInput } from './validators';
-import { safeRevalidate } from './revalidate';
+import { getTenantPrisma } from '@/lib/auth/session';
+import { safeRevalidate } from '@/lib/revalidate';
+import { convertLeadSchema, type ConvertLeadInput } from '@/lib/validators';
 
 export type ConvertLeadResult =
   | {
       ok: true;
-      accountId: string;
+      customerId: string;
       contactId: string;
       opportunityId: string | null;
     }
@@ -34,81 +33,74 @@ export async function convertLead(
   }
   const input: ConvertLeadInput = parsed.data;
 
-  // Шаг 2 — атомарная транзакция.
+  // Шаг 2 — атомарная транзакция через tenant-клиент.
   try {
-    return await prisma.$transaction(async (tx) => {
-      // (a) UX-проверка статуса (НЕ защита от race — её обеспечивает
-      //     UNIQUE-индекс на Opportunity.leadId в шаге (d)).
-      const lead = await tx.lead.findUnique({ where: { id: leadId } });
-      if (!lead) {
-        return { ok: false as const, error: 'lead_not_found' };
-      }
-      if (lead.status === 'converted') {
-        return { ok: false as const, error: 'lead_already_converted' };
-      }
+    const db = await getTenantPrisma();
+    return await db.$transaction(async (tx) => {
+      // (1) findFirst вместо findUnique — чужой лид не сконвертируется.
+      //     Extension авто-фильтрует по organizationId сессии.
+      const lead = await tx.lead.findFirst({ where: { id: leadId } });
+      if (!lead) return { ok: false as const, error: 'lead_not_found' };
+      if (lead.status === 'converted') return { ok: false as const, error: 'lead_already_converted' };
 
-      // (b) Account: upsert по обязательному accountName (D12 — без
-      //     fallback "Лид #<id>"; Account.name @unique гарантирует
-      //     идемпотентность).
-      const account = await tx.account.upsert({
-        where: { name: input.accountName },
+      // (2) Customer: upsert по compound-unique [organizationId, name].
+      //     lead.organizationId гарантированно == orgId сессии (лид найден
+      //     через findFirst с авто-фильтром extension-а).
+      const customer = await tx.customer.upsert({
+        where: { organizationId_name: { organizationId: lead.organizationId, name: input.accountName } },
         update: {},
-        create: { name: input.accountName },
+        // organizationId инжектируется extension на runtime.
+        create: { name: input.accountName,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
       });
 
-      // (c) Contact.
+      // (3) Contact.create получает organizationId от extension.
       const contact = await tx.contact.create({
         data: {
           name:      input.contactName,
           email:     input.contactEmail || null,
           phone:     input.contactPhone || null,
-          accountId: account.id,
-        },
+          accountId: customer.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
       });
 
-      // (d) Opportunity (опц.) — здесь сработает UNIQUE INDEX на leadId
-      //     при race (D14).
       let opportunity: { id: string } | null = null;
       if (input.createOpportunity && input.opportunityTitle) {
-        const qualificationStage = await tx.stage.findUnique({
-          where: { name: 'qualification' },
-        });
-        if (!qualificationStage) {
+        // (4) Stage.findFirst — квалификация в рамках org.
+        const stage = await tx.stage.findFirst({ where: { name: 'qualification' } });
+        if (!stage) {
           throw new Error('Stage "qualification" not found — выполните npm run db:seed');
         }
         opportunity = await tx.opportunity.create({
           data: {
             title:     input.opportunityTitle,
             amount:    input.opportunityAmount ?? null,
-            accountId: account.id,
+            accountId: customer.id,
             contactId: contact.id,
             leadId:    lead.id,
-            stageId:   qualificationStage.id,
-          },
+            stageId:   stage.id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
         });
       }
 
-      // (e) Lead → converted.
-      await tx.lead.update({
-        where: { id: leadId },
-        data: { status: 'converted' },
-      });
+      await tx.lead.update({ where: { id: leadId }, data: { status: 'converted' } });
 
-      // (f) Инвалидация кэша (D13). safeRevalidate глушит ошибку Next,
-      //     которая возникает при запуске вне request-context (smoke).
       safeRevalidate('/leads');
       safeRevalidate(`/leads/${leadId}`);
       safeRevalidate('/dashboard');
 
       return {
         ok: true as const,
-        accountId:    account.id,
-        contactId:    contact.id,
+        customerId:    customer.id,
+        contactId:     contact.id,
         opportunityId: opportunity?.id ?? null,
       };
     });
   } catch (err) {
-    // Защита от race (D14): уникальный индекс на Opportunity.leadId.
+    // Защита от race: уникальный индекс на Opportunity.leadId.
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === 'P2002'

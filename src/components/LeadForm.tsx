@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateLead } from '@/lib/leads';
-import { createAccount } from '@/lib/accounts';
+import { createCustomer } from '@/lib/customers';
 import { createContact } from '@/lib/contacts';
 import { Drawer } from '@/components/Drawer';
 import { DrawerHeader } from '@/components/DrawerHeader';
-import type { Account, Contact, Lead } from '@prisma/client';
+import type { Customer, Contact, Lead } from '@prisma/client';
 
 const SOURCE_OPTIONS = [
   { value: 'site',     label: 'Сайт' },
@@ -28,26 +28,26 @@ const STATUS_VALUES  = STATUS_OPTIONS.map((s) => s.value) as readonly string[];
 
 type Props = {
   lead: Lead;
-  accounts: Account[];
+  customers: Customer[];
   contacts: Contact[];
 };
 
-export function LeadForm({ lead, accounts: initialAccounts, contacts: initialContacts }: Props) {
+export function LeadForm({ lead, customers: initialCustomers, contacts: initialContacts }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [ok, setOk] = useState(false);
 
   // Inline-create state (та же логика, что в CreateLeadForm)
-  const [accounts, setAccounts]               = useState<Account[]>(initialAccounts);
-  const [contacts, setContacts]               = useState<Contact[]>(initialContacts);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(() => {
-    // При открытии Drawer — найти Account, имя которого совпадает с lead.company
-    return initialAccounts.find((a) => a.name === lead.company)?.id ?? '';
+  const [customers, setCustomers]               = useState<Customer[]>(initialCustomers);
+  const [contacts, setContacts]                 = useState<Contact[]>(initialContacts);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(() => {
+    // При открытии Drawer — найти Customer, имя которого совпадает с lead.company
+    return initialCustomers.find((c) => c.name === lead.company)?.id ?? '';
   });
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [customCompanyMode, setCustomCompanyMode] = useState(false);
-  const [subOpen, setSubOpen] = useState<'account' | 'contact' | null>(null);
+  const [subOpen, setSubOpen] = useState<'customer' | 'contact' | null>(null);
 
   const [pendingSub, startSub] = useTransition();
 
@@ -55,7 +55,7 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
     setSubOpen(null);
   }
 
-  async function handleCreateAccount(formData: FormData): Promise<void> {
+  async function handleCreateCustomer(formData: FormData): Promise<void> {
     const input = {
       name:     String(formData.get('name') ?? ''),
       website:  String(formData.get('website') ?? '') || undefined,
@@ -63,24 +63,24 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
     };
     setSubOpen(null);
     startSub(async () => {
-      const result = await createAccount(input);
+      const result = await createCustomer(input);
       if (!result.ok) return;
       const newId = result.data.id;
-      setAccounts((prev) => (prev.find((a) => a.id === newId) ? prev : [...prev, result.data]));
-      setSelectedAccountId(newId);
+      setCustomers((prev) => (prev.find((c) => c.id === newId) ? prev : [...prev, result.data]));
+      setSelectedCustomerId(newId);
       setCustomCompanyMode(false);
       router.refresh();
     });
   }
 
   async function handleCreateContact(formData: FormData): Promise<void> {
-    const accountIdRaw = String(formData.get('accountId') ?? '');
+    const customerIdRaw = String(formData.get('customerId') ?? '');
     const input = {
-      name:      String(formData.get('name') ?? ''),
-      email:     String(formData.get('email') ?? '') || undefined,
-      phone:     String(formData.get('phone') ?? '') || undefined,
-      role:      String(formData.get('role') ?? '') || undefined,
-      accountId: accountIdRaw || selectedAccountId || undefined,
+      name:       String(formData.get('name') ?? ''),
+      email:      String(formData.get('email') ?? '') || undefined,
+      phone:      String(formData.get('phone') ?? '') || undefined,
+      role:       String(formData.get('role') ?? '') || undefined,
+      customerId: customerIdRaw || selectedCustomerId || undefined,
     };
     setSubOpen(null);
     startSub(async () => {
@@ -99,11 +99,11 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
     const sourceRaw = String(fd.get('source') ?? 'manual');
     const statusRaw = String(fd.get('status') ?? 'new');
 
-    // company: ID существующего Account ИЛИ свободный текст
-    const companySelect = String(fd.get('companySelect') ?? '');
+    // company: ID существующего Customer ИЛИ свободный текст
+    const companySelect = String(fd.get('customerSelect') ?? '');
     const companyText   = String(fd.get('companyText')   ?? '').trim();
     const company = companySelect && companySelect !== '__custom__'
-      ? accounts.find((a) => a.id === companySelect)?.name ?? companyText
+      ? customers.find((c) => c.id === companySelect)?.name ?? companyText
       : companyText;
 
     const input = {
@@ -134,12 +134,12 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
     });
   }
 
-  // Sub-Drawer: Создать Account
-  if (subOpen === 'account') {
+  // Sub-Drawer: Создать Customer
+  if (subOpen === 'customer') {
     return (
       <Drawer onClose={closeSub}>
-        <DrawerHeader entity="account" title="Новая компания" />
-        <form action={handleCreateAccount} className="flex flex-col gap-4 px-6 py-4">
+        <DrawerHeader entity="customer" title="Новая компания" />
+        <form action={handleCreateCustomer} className="flex flex-col gap-4 px-6 py-4">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">
               Название <span className="text-rose-600">*</span>
@@ -232,13 +232,13 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-zinc-700 dark:text-zinc-300">Компания</span>
             <select
-              name="accountId"
-              defaultValue={selectedAccountId}
+              name="customerId"
+              defaultValue={selectedCustomerId}
               className="rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">— без компании —</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </label>
@@ -275,26 +275,26 @@ export function LeadForm({ lead, accounts: initialAccounts, contacts: initialCon
         <span className="text-zinc-700 dark:text-zinc-300">Компания</span>
         <div className="flex gap-2">
           <select
-            id="companySelect"
-            name="companySelect"
-            key={`company-${selectedAccountId}-${accounts.length}`}
-            value={selectedAccountId}
+            id="customerSelect"
+            name="customerSelect"
+            key={`customer-${selectedCustomerId}-${customers.length}`}
+            value={selectedCustomerId}
             onChange={(e) => {
               const v = e.target.value;
-              setSelectedAccountId(v);
+              setSelectedCustomerId(v);
               setCustomCompanyMode(v === '__custom__');
             }}
             className="flex-1 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           >
             <option value="">— выбрать из списка —</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
             ))}
             <option value="__custom__">— свободный ввод —</option>
           </select>
           <button
             type="button"
-            onClick={() => setSubOpen('account')}
+            onClick={() => setSubOpen('customer')}
             className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 whitespace-nowrap"
           >
             + Создать

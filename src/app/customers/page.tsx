@@ -1,23 +1,22 @@
 import Link from 'next/link';
-import { getAccounts } from '@/lib/accounts';
+import { getCustomers } from '@/lib/customers';
 import { SearchInput } from '@/components/SearchInput';
 import { FilterBar } from '@/components/FilterBar';
 import { Pagination } from '@/components/Pagination';
-import { CreateAccountForm } from '@/components/CreateAccountForm';
+import { CreateCustomerForm } from '@/components/CreateCustomerForm';
 import { TABLE_HEADERS } from '@/lib/labels';
 
-// ISR: cache 30s. Инвалидируется через safeRevalidate в server actions.
 export const revalidate = 30;
 
 type SP = { q?: string; page?: string };
 
-export default async function AccountsPage({
+export default async function CustomersPage({
   searchParams,
 }: {
   searchParams: Promise<SP>;
 }) {
   const sp = await searchParams;
-  const { items, page, totalPages, total } = await getAccounts({
+  const { items, page, totalPages, total } = await getCustomers({
     q:    sp.q,
     page: sp.page ? Number(sp.page) : 1,
   });
@@ -35,7 +34,7 @@ export default async function AccountsPage({
         <SearchInput placeholder="Поиск по названию компании…" />
         <FilterBar current={baseSearchParams} filters={[]} />
         <div className="sm:ml-auto">
-          <CreateAccountForm />
+          <CreateCustomerForm />
         </div>
       </div>
 
@@ -43,10 +42,10 @@ export default async function AccountsPage({
         <table className="w-full min-w-[480px] text-sm">
           <thead className="bg-zinc-50 dark:bg-zinc-900">
             <tr className="text-left text-zinc-600 dark:text-zinc-400">
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.name}</th>
-              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.accounts.website}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.contacts}</th>
-              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.accounts.opportunities}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.customers.name}</th>
+              <th className="px-3 py-2 font-medium hidden sm:table-cell">{TABLE_HEADERS.customers.website}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.customers.contacts}</th>
+              <th className="px-3 py-2 font-medium">{TABLE_HEADERS.customers.opportunities}</th>
             </tr>
           </thead>
           <tbody>
@@ -57,20 +56,20 @@ export default async function AccountsPage({
                 </td>
               </tr>
             ) : (
-              items.map((acc) => (
-                <tr key={acc.id} className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+              items.map((cust) => (
+                <tr key={cust.id} className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                   <td className="px-3 py-2">
                     <Link
-                      href={`/accounts/${acc.id}`}
+                      href={`/customers/${cust.id}`}
                       className="text-zinc-900 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
                     >
-                      {acc.name}
+                      {cust.name}
                     </Link>
                   </td>
                   <td className="px-3 py-2 hidden sm:table-cell">
-                    {acc.website ? (
-                      <a href={acc.website} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                        {acc.website}
+                    {cust.website ? (
+                      <a href={cust.website} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                        {cust.website}
                       </a>
                     ) : (
                       '—'
@@ -78,12 +77,12 @@ export default async function AccountsPage({
                   </td>
                   <td className="px-3 py-2">
                     <span className="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800">
-                      {acc._count?.contacts ?? 0}
+                      {cust._count?.contacts ?? 0}
                     </span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-950/40 px-2 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
-                      {acc._count?.opportunities ?? 0}
+                      {cust._count?.opportunities ?? 0}
                     </span>
                   </td>
                 </tr>
@@ -93,7 +92,7 @@ export default async function AccountsPage({
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} basePath="/accounts" searchParams={baseSearchParams} />
+      <Pagination page={page} totalPages={totalPages} basePath="/customers" searchParams={baseSearchParams} />
     </main>
   );
 }
