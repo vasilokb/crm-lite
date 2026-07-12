@@ -123,7 +123,7 @@ export const productInputSchema = z
   })
   .superRefine((v, ctx) => {
     const hasComponents = Array.isArray(v.components) && v.components.length > 0;
-    if (!hasComponents && v.price === undefined) {
+    if (!hasComponents && (v.price === undefined || v.price <= 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['price'],

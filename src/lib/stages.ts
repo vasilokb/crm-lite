@@ -156,7 +156,7 @@ export async function seedDemoData(
     update: {},
     create: { name: 'Дизайн-проект', price: 150_000, organizationId },
   });
-  const bundle = await tx.product.upsert({
+const bundle = await tx.product.upsert({
     where: { organizationId_name: { organizationId, name: 'Комплекс «Под ключ»' } },
     update: {},
     // B5-revised: цена бандла = Σ компонентов (800_000 + 2×120_000 + 150_000 = 1_190_000).

@@ -157,7 +157,69 @@ async function main() {
     })
   ));
 
-  console.log('Seed: 1 org + 1 owner | 5 stages, 4 customers, 5 contacts, 6 leads, 6 opportunities, 8 activities');
+  // === Products / Bundle / LineItems / Discount (фаза P7 — адаптировано для seed.ts) ===
+  // Используем prisma (сырой), а не getTenantPrisma — seed работает вне request-context.
+  // OrganizationId передаём явно. Идемпотентность через upsert по compound-unique.
+  const stand = await prisma.product.upsert({
+    where: { organizationId_name: { organizationId: org.id, name: 'Стенд «Стандарт»' } },
+    update: {},
+    create: { name: 'Стенд «Стандарт»', price: 800_000, organizationId: org.id },
+  });
+  const mount = await prisma.product.upsert({
+    where: { organizationId_name: { organizationId: org.id, name: 'Монтаж оборудования' } },
+    update: {},
+    create: { name: 'Монтаж оборудования', price: 120_000, organizationId: org.id },
+  });
+  const design = await prisma.product.upsert({
+    where: { organizationId_name: { organizationId: org.id, name: 'Дизайн-проект' } },
+    update: {},
+    create: { name: 'Дизайн-проект', price: 150_000, organizationId: org.id },
+  });
+  // B5-revised: цена бандла = Σ компонентов (800_000 + 2×120_000 + 150_000 = 1_190_000).
+  const bundle = await prisma.product.upsert({
+    where: { organizationId_name: { organizationId: org.id, name: 'Комплекс «Под ключ»' } },
+    update: {},
+    create: { name: 'Комплекс «Под ключ»', price: 1_190_000, organizationId: org.id },
+  });
+  await Promise.all([
+    prisma.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId: org.id, bundleId: bundle.id, componentId: stand.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: stand.id, quantity: 1, organizationId: org.id },
+    }),
+    prisma.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId: org.id, bundleId: bundle.id, componentId: mount.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: mount.id, quantity: 2, organizationId: org.id },
+    }),
+    prisma.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId: org.id, bundleId: bundle.id, componentId: design.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: design.id, quantity: 1, organizationId: org.id },
+    }),
+  ]);
+  // Позиции сделки «Гамма-Авто 2026» (opportunities[0]) — снапшот unitPrice явный.
+  // Идемпотентность через findFirst (дубли в сделке разрешены, upsert невозможен).
+  const demoOpp = opportunities[0];
+  const li1 = await prisma.lineItem.findFirst({ where: { opportunityId: demoOpp.id, productId: bundle.id } });
+  if (!li1) {
+    await prisma.lineItem.create({
+      data: { opportunityId: demoOpp.id, productId: bundle.id, quantity: 1, unitPrice: bundle.price, organizationId: org.id },
+    });
+  }
+  const li2 = await prisma.lineItem.findFirst({ where: { opportunityId: demoOpp.id, productId: mount.id, unitPrice: mount.price } });
+  if (!li2) {
+    await prisma.lineItem.create({
+      data: { opportunityId: demoOpp.id, productId: mount.id, quantity: 1, unitPrice: mount.price, organizationId: org.id },
+    });
+  }
+  // Subtotal = 1_190_000 (бандл) + 120_000 (монтаж) = 1_310_000; discount = 20_000 → amount = 1_290_000.
+  await prisma.opportunity.update({
+    where: { id: demoOpp.id },
+    data: { discount: 20_000, amount: 1_290_000 },
+  });
+
+  console.log('Seed: 1 org + 1 owner | 5 stages, 4 customers, 5 contacts, 6 leads, 6 opportunities, 8 activities, 4 products, 3 product components, 2 line items');
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

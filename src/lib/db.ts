@@ -23,7 +23,7 @@ process.on('SIGINT', shutdown);
 // и изоляция молча ломается (arch §9.1).
 const TENANT_MODELS = [
   'lead', 'customer', 'contact', 'opportunity', 'activity', 'stage',
-  'product', 'lineitem', 'productcomponent',
+  'product', 'lineItem', 'productComponent',
 ] as const;
 const AUTO_WHERE = new Set(['findMany', 'findFirst', 'count', 'aggregate', 'groupBy', 'updateMany', 'deleteMany']);
 

@@ -108,7 +108,7 @@ export function ProductForm(props: Props) {
     setError(null);
     setFieldErrors({});
 
-    const name = String(formData.get('name') ?? '').trim();
+const name = String(formData.get('name') ?? '').trim();
     const description = String(formData.get('description') ?? '').trim();
     const sku = String(formData.get('sku') ?? '').trim();
     const priceStr = String(formData.get('price') ?? '').trim();

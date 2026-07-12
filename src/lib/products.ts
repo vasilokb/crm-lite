@@ -49,8 +49,7 @@ export async function createProduct(input: ProductInput): Promise<Result<Product
   const db = await getTenantPrisma();
   try {
     return await db.$transaction(async (tx) => {
-      // B5-revised: для бандла price = Σ компонентов (вычисляем здесь, из формы игнорируем).
-      // Для простого продукта — price из формы (обязателен по Zod superRefine).
+      // B5-revised: для бандла price = Σ компонентов; для простого — price из формы.
       let finalPrice: number;
       if (components.length > 0) {
         const componentIds = components.map((c) => c.componentId);
@@ -59,7 +58,6 @@ export async function createProduct(input: ProductInput): Promise<Result<Product
           select: { id: true, price: true },
         });
         if (found.length !== new Set(componentIds).size) throw new Error('component_not_found');
-        await assertNoCycleForBundle(tx, '__pending__', componentIds);
         const priceById = new Map(found.map((f) => [f.id, f.price]));
         const agg = aggregateComponents(components);
         let sum = 0;
@@ -68,7 +66,7 @@ export async function createProduct(input: ProductInput): Promise<Result<Product
         }
         finalPrice = sum;
       } else {
-        finalPrice = p.data.price as number; // Zod superRefine гарантирует наличие
+        finalPrice = p.data.price as number;
       }
 
       const product = await tx.product.create({
@@ -89,7 +87,7 @@ export async function createProduct(input: ProductInput): Promise<Result<Product
             data: { bundleId: product.id, componentId, quantity },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any);
-          }
+        }
       }
       safeRevalidate('/products');
       return { ok: true as const, data: product };
@@ -134,10 +132,10 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
         }
         finalPrice = sum;
       } else if (replaceComponents && components.length === 0) {
-        // Бандл → простой (или пустой бандл): цена из формы (Zod требует, т.к. нет components).
+        // Бандл → простой (или пустой бандл): цена из формы.
         finalPrice = p.data.price as number;
       } else {
-        // Композиция состава не менялась — цену не трогаем, чтобы не обнулить ручную.
+        // Состав не менялся — цену не трогаем.
         finalPrice = existing.price;
       }
 
@@ -148,7 +146,8 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           description: p.data.description || null,
           price: finalPrice,
           sku: p.data.sku || null,
-        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
       });
       if (replaceComponents) {
         await tx.productComponent.deleteMany({ where: { bundleId: id } });
@@ -157,7 +156,8 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           await assertNoCycleForBundle(tx, id, componentIds);
           const agg = aggregateComponents(components);
           for (const [componentId, quantity] of agg) {
-            await tx.productComponent.create({ data: { bundleId: id, componentId, quantity },
+            await tx.productComponent.create({
+              data: { bundleId: id, componentId, quantity },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any);
           }
