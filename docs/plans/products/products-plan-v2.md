@@ -51,7 +51,7 @@
 | P7. Seed (`stages.ts`) | D+B | [x] | 2026-07-12 | seed: 4 продукта + 1 бандл + 3 ProductComponent + 2 LineItem на o1 + discount=20000; контрольная сумма o1.amount=1_290_000; tsc+lint 0; db:reset ok, счётчики сошлись, идемпотентность подтверждена + ревизия B5: bundle.price=1_190_000 (Σ), o1.amount=1_290_000 + перенос products-демо в prisma/seed.ts |
 | P8. Каталог UI (`/products`, ProductForm, ProductCard) | F | [x] | 2026-07-12 | каталог UI: /products + @modal Drawer + единая ProductForm (toggle/Σ/поиск со скрытием self+добавленных) + ProductCard + NavHeader; tsc+lint+build 0 + фикс отображения компонентов в форме (name/price в state, Σ всегда при components.length>0) + ревизия B5: поле «Базовая цена» скрыто для бандла, блок «Цена бандла (расчётная)» наверху формы |
 | P9. Сделка UI (OpportunityLineItems, OpportunityCard, OpportunityForm) | F | [x] | 2026-07-12 | Сделка UI: OpportunityLineItems (inline-CRUD + Subtotal/Discount/Total) + OpportunityCard секция + OpportunityForm гибрид (amount readonly в авто, discount скрыт); tsc+lint+build 0; UI 8/8 |
-| P10. Приёмка | F+B+D | [ ] | [ ] | изоляция 2 org + сценарий + lint/build |
+| P10. Приёмка | F+B+D | [x] | 2026-07-12 | приёмка пройдена, чек-лист 21/21 ✅; README + architecture.md обновлены; lint+build 0; см. docs/plans/products/TEST_REPORT.md |
 
 **Правило:** после Test-критерия — `[x]`; если не прошло — `⚠ <дата>: <что не прошло>` и
 корректировка следующих шагов. Не переходить к следующей фазе, пока текущая не `[x]`.
