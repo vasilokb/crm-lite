@@ -150,6 +150,9 @@ model Opportunity {
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
 
   activities Activity[]
+  lineItems  LineItem[]
+
+  discount   Float?   // абсолютная скидка, только в авто-режиме (фаза P1)
 
   @@index([organizationId])
   @@index([stageId])
@@ -175,6 +178,69 @@ model Activity {
   @@index([organizationId])
   @@index([opportunityId])
   @@index([done, dueDate])
+}
+
+// ===== CATALOG (фаза P1) =====
+model Product {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  price          Float
+  sku            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  lineItems      LineItem[]
+
+  // Составные продукты (бандлы) — self-ref M:N:
+  components     ProductComponent[] @relation("BundleComponents")
+  partOfBundles  ProductComponent[] @relation("ComponentOfBundle")
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
+}
+
+model LineItem {
+  id        String   @id @default(cuid())
+  quantity  Int      @default(1)
+  unitPrice Float    // снапшот на момент создания; для бандла = bundle.price
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt  // timestamp последней правки qty/unitPrice (updateLineItem)
+
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([opportunityId])
+  @@index([productId])
+  @@index([organizationId])
+}
+
+model ProductComponent {
+  id          String @id @default(cuid())
+  quantity    Int    @default(1)
+
+  bundleId    String
+  bundle      Product @relation("BundleComponents", fields: [bundleId], references: [id], onDelete: Cascade)
+
+  componentId String
+  component   Product @relation("ComponentOfBundle", fields: [componentId], references: [id], onDelete: Restrict)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([componentId])
+  @@index([organizationId])
+  @@unique([organizationId, bundleId, componentId])
 }
 // ===== IDENTITY + TENANCY (фаза A1) =====
 enum MembershipRole {
@@ -251,6 +317,9 @@ model Organization {
   contacts       Contact[]
   opportunities  Opportunity[]
   activities     Activity[]
+  products          Product[]
+  lineItems         LineItem[]
+  productComponents ProductComponent[]
 }
 
 model Membership {

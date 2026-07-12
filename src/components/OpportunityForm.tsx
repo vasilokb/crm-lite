@@ -11,9 +11,11 @@ const STATUS_OPTIONS = ['open', 'won', 'lost'] as const;
 export function OpportunityForm({
   opportunity,
   stages,
+  hasLineItems = false,
 }: {
   opportunity: Opportunity;
   stages: Array<{ id: string; name: string }>;
+  hasLineItems?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -25,6 +27,8 @@ export function OpportunityForm({
     const fd = new FormData(e.currentTarget);
     const input = {
       title:      String(fd.get('title') ?? ''),
+      // В авто-режиме (есть позиции) сервер игнорирует amount (см. updateOpportunity — гибрид).
+      // discount формой НЕ управляется — им владеет updateDiscount из OpportunityLineItems.
       amount:     fd.get('amount') ? Number(fd.get('amount')) : undefined,
       stageId:    String(fd.get('stageId') ?? opportunity.stageId),
       customerId: opportunity.accountId ?? undefined,
@@ -55,13 +59,30 @@ export function OpportunityForm({
         defaultValue={opportunity.title}
         errors={errors.title}
       />
-      <Field
-        name="amount"
-        label="Сумма (₽)"
-        type="number"
-        defaultValue={opportunity.amount?.toString() ?? ''}
-        errors={errors.amount}
-      />
+
+      {hasLineItems ? (
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="text-zinc-700 dark:text-zinc-300">Сумма (₽)</span>
+          <input
+            name="amount"
+            type="number"
+            readOnly
+            value={opportunity.amount?.toString() ?? ''}
+            className="rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-3 py-2 outline-none cursor-not-allowed"
+          />
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Сумма рассчитывается из позиций (см. блок «Товары в сделке»)
+          </span>
+        </div>
+      ) : (
+        <Field
+          name="amount"
+          label="Сумма (₽)"
+          type="number"
+          defaultValue={opportunity.amount?.toString() ?? ''}
+          errors={errors.amount}
+        />
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-700 dark:text-zinc-300">Стадия</span>

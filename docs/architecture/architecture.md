@@ -27,9 +27,9 @@ Person(guest, "Гость", "Неавторизован")
 
 System_Boundary(crm, "CRM-lite (B2B SaaS)") {
 
-  Container(browser, "Web Client", "React 19, Next.js App Router (client), Tailwind", "Формы login/register/invite,\nраздел «Команда», NavHeader\n(workspace switcher + профиль-меню + «Выйти»),\nDrawer-overlay (intercepting routes),\n«глазок» паролей")
+  Container(browser, "Web Client", "React 19, Next.js App Router (client), Tailwind", "Формы login/register/invite,\nраздел «Команда», NavHeader\n(workspace switcher + профиль-меню + «Выйти»),\nDrawer-overlay (intercepting routes),\nкаталог продуктов (/products + единая форма бандла),\nблок Товары в сделке (inline-CRUD + Subtotal/Discount/Total),\n«глазок» паролей")
 
-  Container(app, "Next.js Application", "Next.js 16 (App Router, server), TypeScript", "Server Components + Server Actions (src/lib/*.ts).\n\n• Middleware (edge): cookie-guard → /login\n• Auth.js v5: Credentials, Prisma adapter, JWT-стратегия\n• Auth Guard: getCurrentUser() / getCurrentOrgId()\n• Tenant Filter: createTenantPrisma(orgId) — авто-инжект organizationId\n• Prisma Client\n• Маршруты: /login /register /invite;\n  /dashboard /leads /customers /contacts /opportunities /team;\n  @modal/(.)<entity> — Drawer-overlay")
+  Container(app, "Next.js Application", "Next.js 16 (App Router, server), TypeScript", "Server Components + Server Actions (src/lib/*.ts).\n\n• Middleware (edge): cookie-guard → /login\n• Auth.js v5: Credentials, Prisma adapter, JWT-стратегия\n• Auth Guard: getCurrentUser() / getCurrentOrgId() (redirect /login на стейл/невалидной сессии)\n• Tenant Filter: createTenantPrisma(orgId) — авто-инжект organizationId\n• Бизнес-логика: leads/customers/contacts/opportunities/products/lineItems\n  (гибрид amount + discount + снапшот unitPrice + B5 авто-Σ бандла)\n• Prisma Client\n• Маршруты: /login /register /invite;\n  /dashboard /leads /customers /contacts /opportunities /products /team;\n  @modal/(.)<entity> — Drawer-overlay")
 
   ContainerDb(db, "PostgreSQL", "Neon (serverless, pooled)", "Identity: User, Account, Session, VerificationToken\nTenancy: Organization, Membership, InviteToken\nBusiness (+organizationId): Lead, Customer, Contact,\nOpportunity, Activity, Stage")
 }
@@ -138,8 +138,9 @@ end note
 
 - **Identity (Auth.js):** `User`, `Account` (OAuth, пустая), `Session` (с `activeOrganizationId`), `VerificationToken`.
 - **Tenancy:** `Organization`, `Membership` (M:N пользователь↔org, роль, статус), `InviteToken`.
-- **Business** (все с `organizationId`, per-tenant unique): `Lead` (`ownerUserId`→`User`), `Customer` (ex-Account), `Contact`, `Opportunity`, `Activity`, `Stage` (5 на org, справочник воронки).
-- Уникальности per-tenant: `Customer[organizationId,name]`, `Stage[organizationId,name]`/`[organizationId,position]`, `Contact[organizationId,email]`, `Membership[userId,organizationId]`.
+- **Business** (все с `organizationId`, per-tenant unique): `Lead` (`ownerUserId`→`User`), `Customer` (ex-Account), `Contact`, `Opportunity` (с `discount Float?` и `lineItems LineItem[]`), `Activity`, `Stage` (5 на org, справочник воронки).
+- **Каталог (фаза products):** `Product` (организации; `isBundle` вычисляемое — `_count.components > 0`; цена бандла = авто-Σ на сервере, B5-revised), `LineItem` (позиция сделки со снапшотом `unitPrice` на момент продажи; `@updatedAt`), `ProductComponent` (self-ref M:N для состава бандлов; `quantity`).
+- Уникальности per-tenant: `Customer[organizationId,name]`, `Stage[organizationId,name]`/`[organizationId,position]`, `Contact[organizationId,email]`, `Membership[userId,organizationId]`, **`Product[organizationId,name]`**, **`ProductComponent[organizationId,bundleId,componentId]`**.
 
 Полная схема — в `prisma/schema.prisma` (и `auth-implementation.md` §2).
 

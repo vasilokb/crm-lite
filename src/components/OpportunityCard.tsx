@@ -1,5 +1,6 @@
 import { DrawerHeader } from './DrawerHeader';
 import { OpportunityForm } from './OpportunityForm';
+import { OpportunityLineItems } from './OpportunityLineItems';
 import { StageProgressBar } from './StageProgressBar';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ActivityForm } from './ActivityForm';
@@ -11,6 +12,17 @@ type OpportunityFull = Opportunity & {
   contact: Contact | null;
   stage: Stage;
   activities: Activity[];
+  lineItems: Array<{
+    id: string;
+    quantity: number;
+    unitPrice: number;
+    product: {
+      id: string;
+      name: string;
+      sku: string | null;
+      _count: { components: number };
+    };
+  }>;
 };
 
 export function OpportunityCard({
@@ -42,7 +54,11 @@ export function OpportunityCard({
       </div>
 
       <div className="px-6">
-        <OpportunityForm opportunity={opportunity} stages={stages} />
+        <OpportunityForm
+          opportunity={opportunity}
+          stages={stages}
+          hasLineItems={opportunity.lineItems.length > 0}
+        />
       </div>
 
       <section className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
@@ -92,6 +108,14 @@ export function OpportunityCard({
           )}
         </dl>
       </section>
+
+      <OpportunityLineItems
+        opportunityId={opportunity.id}
+        lineItems={opportunity.lineItems}
+        amount={opportunity.amount}
+        discount={opportunity.discount}
+        hasLineItems={opportunity.lineItems.length > 0}
+      />
 
       <section className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800">
         <div className="mb-3 flex items-baseline justify-between">

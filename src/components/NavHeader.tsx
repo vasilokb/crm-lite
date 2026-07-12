@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/customers',     label: 'Компании' },
   { href: '/contacts',      label: 'Контакты' },
   { href: '/opportunities', label: 'Сделки' },
+  { href: '/products',      label: 'Продукты' },
   { href: '/team',          label: 'Команда' },
 ];
 

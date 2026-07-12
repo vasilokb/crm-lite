@@ -26,6 +26,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id: string }).id;
+        // Копируем email/name в token, чтобы session.user.email был доступен.
+        // Это нужно для fallback в src/lib/auth/session.ts (поиск membership по email
+        // когда userId в JWT устарел после db:reset).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const u = user as { email?: string | null; name?: string | null };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t = token as any;
+        if (u.email) t.email = u.email;
+        if (u.name) t.name = u.name;
       }
       if (token.id) {
         const userId = token.id as string;

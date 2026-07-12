@@ -47,17 +47,23 @@ export async function updateOpportunity(
   const p = opportunityInputSchema.safeParse(input);
   if (!p.success) return { ok: false, fieldErrors: p.error.flatten().fieldErrors };
   const db = await getTenantPrisma();
-  const existing = await db.opportunity.findFirst({ where: { id } });
+  const existing = await db.opportunity.findFirst({
+    where: { id },
+    include: { _count: { select: { lineItems: true } } },
+  });
   if (!existing) return { ok: false, error: 'not_found' };
+  const hasLineItems = existing._count.lineItems > 0;
   const opp = await db.opportunity.update({
     where: { id },
     data: {
       title:     p.data.title,
-      amount:    p.data.amount ?? null,
       dueDate:   p.data.dueDate ? new Date(p.data.dueDate) : null,
       stageId:   p.data.stageId,
       accountId: p.data.customerId ?? null,
       contactId: p.data.contactId ?? null,
+      // amount: авто-режим игнорирует (recalcAndApplyAmount управляет); ручной — из формы.
+      ...(hasLineItems ? {} : { amount: p.data.amount ?? null }),
+      // discount: ВСЕГДА игнорируем из формы — только через updateDiscount (фаза P5).
     },
   });
   safeRevalidate('/opportunities');
@@ -75,6 +81,19 @@ export async function getOpportunity(id: string) {
       contact:     true,
       stage:       true,
       activities: { orderBy: { createdAt: 'desc' } },
+      lineItems: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              _count: { select: { components: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
     },
   });
 }
