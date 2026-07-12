@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createProduct, updateProduct, searchProducts } from '@/lib/products';
 import type { ProductCardData } from './ProductCard';
 
-type ComponentItem = { componentId: string; quantity: number };
+type ComponentItem = { componentId: string; name: string; price: number; quantity: number };
 type SearchHit = { id: string; name: string; price: number; sku: string | null };
 
 type Props =
@@ -39,6 +39,8 @@ export function ProductForm(props: Props) {
       editProduct
         ? editProduct.components.map((c) => ({
             componentId: c.component.id,
+            name: c.component.name,
+            price: c.component.price,
             quantity: c.quantity,
           }))
         : [],
@@ -79,7 +81,10 @@ export function ProductForm(props: Props) {
   const visibleHits = hits.filter((h) => h.id !== selfId && !addedIds.has(h.id));
 
   function addComponent(hit: SearchHit): void {
-    setComponents((cs) => [...cs, { componentId: hit.id, quantity: 1 }]);
+    setComponents((cs) => [
+      ...cs,
+      { componentId: hit.id, name: hit.name, price: hit.price, quantity: 1 },
+    ]);
     setSearchQ('');
     setHits([]);
   }
@@ -94,27 +99,10 @@ export function ProductForm(props: Props) {
     setComponents((cs) => cs.filter((c) => c.componentId !== componentId));
   }
 
-  const componentsSum = useMemo(() => {
-    const map = new Map<string, { name: string; price: number }>();
-    for (const c of components) {
-      const hit = hits.find((h) => h.id === c.componentId);
-      const existing = map.get(c.componentId);
-      if (existing) {
-        existing.price += hit?.price ?? 0;
-      } else {
-        map.set(c.componentId, {
-          name: hit?.name ?? c.componentId,
-          price: hit?.price ?? 0,
-        });
-      }
-    }
-    let sum = 0;
-    for (const c of components) {
-      const hit = hits.find((h) => h.id === c.componentId);
-      sum += (hit?.price ?? 0) * c.quantity;
-    }
-    return sum;
-  }, [components, hits]);
+  const componentsSum = useMemo(
+    () => components.reduce((s, c) => s + c.price * c.quantity, 0),
+    [components]
+  );
 
   function handleSubmit(formData: FormData): void {
     setError(null);
@@ -136,7 +124,10 @@ export function ProductForm(props: Props) {
       description: description || undefined,
       price,
       sku: sku || undefined,
-      components: isBundle && components.length > 0 ? components : undefined,
+      components:
+        isBundle && components.length > 0
+          ? components.map(({ componentId, quantity }) => ({ componentId, quantity }))
+          : undefined,
     };
 
     start(async () => {
@@ -283,14 +274,13 @@ export function ProductForm(props: Props) {
           ) : (
             <ul className="flex flex-col gap-2">
               {components.map((c) => {
-                const hit = hits.find((h) => h.id === c.componentId);
                 return (
                   <li
                     key={c.componentId}
                     className="flex items-center gap-2 rounded border border-zinc-100 dark:border-zinc-800 px-2 py-1.5 text-sm"
                   >
                     <span className="flex-1 text-zinc-700 dark:text-zinc-300">
-                      {hit?.name ?? c.componentId}
+                      {c.name}
                     </span>
                     <label className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                       Кол-во
@@ -306,9 +296,7 @@ export function ProductForm(props: Props) {
                       />
                     </label>
                     <span className="text-xs text-zinc-500 dark:text-zinc-400 w-24 text-right">
-                      {hit
-                        ? new Intl.NumberFormat('ru-RU').format(hit.price * c.quantity) + ' ₽'
-                        : '—'}
+                      {new Intl.NumberFormat('ru-RU').format(c.price * c.quantity)} ₽
                     </span>
                     <button
                       type="button"
@@ -324,7 +312,7 @@ export function ProductForm(props: Props) {
             </ul>
           )}
 
-          {components.length > 0 && hits.length > 0 && (
+          {components.length > 0 && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               💡 Σ компонентов: {new Intl.NumberFormat('ru-RU').format(componentsSum)} ₽
             </p>
