@@ -91,7 +91,7 @@ export async function createProduct(input: ProductInput): Promise<Result<Product
       }
       safeRevalidate('/products');
       return { ok: true as const, data: product };
-    });
+    }, { timeout: 15_000 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'unknown';
     if (msg.includes('Unique constraint') && msg.includes('name')) {
@@ -166,7 +166,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
       safeRevalidate('/products');
       safeRevalidate(`/products/${id}`);
       return { ok: true as const, data: product };
-    });
+    }, { timeout: 15_000 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'unknown';
     if (msg === 'not_found') return { ok: false, error: 'not_found' };

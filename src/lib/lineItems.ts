@@ -66,7 +66,7 @@ export async function addLineItem(input: LineItemCreateInput): Promise<Result<vo
         } as any,
       });
       await recalcAndApplyAmount(tx, p.data.opportunityId);
-    });
+    }, { timeout: 15_000 });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'unknown' };
   }
@@ -92,7 +92,7 @@ export async function updateLineItem(id: string, input: LineItemUpdateInput): Pr
         },
       });
       await recalcAndApplyAmount(tx, opportunityId);
-    });
+    }, { timeout: 15_000 });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'unknown' };
   }
@@ -110,7 +110,7 @@ export async function removeLineItem(id: string): Promise<Result<void>> {
       opportunityId = existing.opportunityId;
       await tx.lineItem.delete({ where: { id } });
       await recalcAndApplyAmount(tx, opportunityId);
-    });
+    }, { timeout: 15_000 });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'unknown' };
   }
@@ -142,7 +142,7 @@ export async function updateDiscount(input: DiscountInput): Promise<Result<void>
         data: { discount: p.data.discount },
       });
       await recalcAndApplyAmount(tx, p.data.opportunityId);
-    });
+    }, { timeout: 15_000 });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'unknown' };
   }
