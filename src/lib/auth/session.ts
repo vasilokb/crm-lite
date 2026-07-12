@@ -15,15 +15,32 @@ export async function getCurrentOrgId(): Promise<string> {
   if (orgId) return orgId;
 
   // Defensive fallback: JWT-callback иногда не прокидывает activeOrganizationId
-  // (например, после db:reset или при стейл-cookie). Достаём первую активную membership напрямую.
+  // (после db:reset, при стейл-cookie, при смене user.id в БД).
+  // Стратегия поиска membership (по убыванию надёжности):
+  // 1) по userId из JWT
+  // 2) по email из JWT — резерв на случай, если userId из JWT устарел (до db:reset)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const userId = ((s.user as any).id ?? null) as string | null;
-  if (!userId) throw new Error('NO_ACTIVE_ORG');
-  const m = await prisma.membership.findFirst({
-    where: { userId, status: 'active' },
-    orderBy: { createdAt: 'asc' },
-    select: { organizationId: true },
-  });
+  const u = s.user as any;
+  let m = u.id
+    ? await prisma.membership.findFirst({
+        where: { userId: u.id, status: 'active' },
+        orderBy: { createdAt: 'asc' },
+        select: { organizationId: true },
+      })
+    : null;
+  if (!m && u.email) {
+    const userRow = await prisma.user.findUnique({
+      where: { email: u.email },
+      select: { id: true },
+    });
+    if (userRow) {
+      m = await prisma.membership.findFirst({
+        where: { userId: userRow.id, status: 'active' },
+        orderBy: { createdAt: 'asc' },
+        select: { organizationId: true },
+      });
+    }
+  }
   if (!m) throw new Error('NO_ACTIVE_ORG');
   return m.organizationId;
 }
