@@ -18,7 +18,13 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 // ===== A7: Tenant-aware Prisma client =====
-const TENANT_MODELS = ['lead', 'customer', 'contact', 'opportunity', 'activity', 'stage'] as const;
+// ПРИ ДОБАВЛЕНИИ tenant-сущности в schema.prisma — обязательно добавить имя модели
+// (lowercase) в этот массив, иначе createTenantPrisma не фильтрует её по organizationId
+// и изоляция молча ломается (arch §9.1).
+const TENANT_MODELS = [
+  'lead', 'customer', 'contact', 'opportunity', 'activity', 'stage',
+  'product', 'lineitem', 'productcomponent',
+] as const;
 const AUTO_WHERE = new Set(['findMany', 'findFirst', 'count', 'aggregate', 'groupBy', 'updateMany', 'deleteMany']);
 
 // Фабрика: возвращает клиент, ограниченный одной организацией.
