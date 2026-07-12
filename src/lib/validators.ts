@@ -102,3 +102,44 @@ export const toggleDoneSchema = z.object({
   done: z.boolean(),
 });
 export type ToggleDoneInput = z.infer<typeof toggleDoneSchema>;
+
+// ===== Products / LineItems / Discount (фаза P3) =====
+
+export const productComponentItemSchema = z.object({
+  componentId: id,
+  quantity:    z.number().int().positive(),
+});
+
+export const productInputSchema = z.object({
+  name:        trimmed(200),
+  description: optTrimmed(2000),
+  price:       z.number().positive(),
+  sku:         optTrimmed(60),
+  // Состав бандла (режим B): undefined = не бандл; [] = бандл без компонентов (допустимо временно).
+  components:  z.array(productComponentItemSchema).optional(),
+});
+export type ProductInput = z.infer<typeof productInputSchema>;
+
+export const lineItemCreateSchema = z.object({
+  opportunityId: id,
+  productId:     id,
+  quantity:      z.number().int().positive().default(1),
+});
+export type LineItemCreateInput = z.infer<typeof lineItemCreateSchema>;
+
+export const lineItemUpdateSchema = z
+  .object({
+    quantity:  z.number().int().positive().optional(),
+    unitPrice: z.number().positive().optional(),
+  })
+  .refine((v) => v.quantity !== undefined || v.unitPrice !== undefined, {
+    message: 'Хотя бы одно поле должно быть передано',
+  });
+export type LineItemUpdateInput = z.infer<typeof lineItemUpdateSchema>;
+
+// discount: null = «не задана»; верхнюю границу валидируем в action'е против Subtotal.
+export const discountInputSchema = z.object({
+  opportunityId: id,
+  discount:      z.number().min(0).nullable(),
+});
+export type DiscountInput = z.infer<typeof discountInputSchema>;
