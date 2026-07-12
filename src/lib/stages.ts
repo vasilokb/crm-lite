@@ -159,7 +159,8 @@ export async function seedDemoData(
   const bundle = await tx.product.upsert({
     where: { organizationId_name: { organizationId, name: 'Комплекс «Под ключ»' } },
     update: {},
-    create: { name: 'Комплекс «Под ключ»', price: 1_000_000, organizationId },
+    // B5-revised: цена бандла = Σ компонентов (800_000 + 2×120_000 + 150_000 = 1_190_000).
+    create: { name: 'Комплекс «Под ключ»', price: 1_190_000, organizationId },
   });
   await Promise.all([
     tx.productComponent.upsert({
@@ -191,10 +192,10 @@ export async function seedDemoData(
       data: { opportunityId: o1.id, productId: mount.id, quantity: 1, unitPrice: mount.price, organizationId },
     });
   }
-  // Subtotal = 1_000_000 + 120_000 = 1_120_000; discount = 20_000 → amount = 1_100_000.
+  // B5-revised: цена бандла = 1_190_000 (Σ компонентов); Subtotal o1 = 1_190_000 + 120_000 = 1_310_000; discount = 20_000 → amount = 1_290_000.
   await tx.opportunity.update({
     where: { id: o1.id },
-    data: { discount: 20_000, amount: 1_100_000 },
+    data: { discount: 20_000, amount: 1_290_000 },
   });
 
   await tx.opportunity.create({

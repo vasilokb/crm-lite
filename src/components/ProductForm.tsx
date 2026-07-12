@@ -112,9 +112,10 @@ export function ProductForm(props: Props) {
     const description = String(formData.get('description') ?? '').trim();
     const sku = String(formData.get('sku') ?? '').trim();
     const priceStr = String(formData.get('price') ?? '').trim();
-    const price = Number(priceStr);
+    const isBundleNow = isBundle && components.length > 0;
+    const price = isBundleNow ? undefined : Number(priceStr);
 
-    if (!Number.isFinite(price) || price <= 0) {
+    if (!isBundleNow && (!Number.isFinite(price) || (price as number) <= 0)) {
       setFieldErrors({ price: ['Введите положительное число'] });
       return;
     }
@@ -122,12 +123,12 @@ export function ProductForm(props: Props) {
     const input = {
       name,
       description: description || undefined,
-      price,
+      // Для бандла сервер вычислит price = Σ компонентов (B5-revised).
+      price: isBundleNow ? undefined : price,
       sku: sku || undefined,
-      components:
-        isBundle && components.length > 0
-          ? components.map(({ componentId, quantity }) => ({ componentId, quantity }))
-          : undefined,
+      components: isBundleNow
+        ? components.map(({ componentId, quantity }) => ({ componentId, quantity }))
+        : undefined,
     };
 
     start(async () => {
@@ -168,28 +169,46 @@ export function ProductForm(props: Props) {
         ))}
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-700 dark:text-zinc-300">
-          Базовая цена (₽) <span className="text-rose-600">*</span>
-        </span>
-        <input
-          name="price"
-          type="number"
-          required
-          min="0"
-          step="any"
-          defaultValue={initialPrice}
-          aria-invalid={Boolean(fieldErrors.price)}
-          className={`rounded border px-3 py-2 outline-none focus:ring-1 bg-white dark:bg-zinc-950 ${
-            fieldErrors.price
-              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
-              : 'border-zinc-300 dark:border-zinc-700 focus:border-indigo-500 focus:ring-indigo-500'
-          }`}
-        />
-        {fieldErrors.price?.map((e, i) => (
-          <p key={i} className="text-xs text-rose-600 dark:text-rose-400">{e}</p>
-        ))}
-      </label>
+      {/* B5-revised: для бандла поле цены скрыто — цена = Σ компонентов, вычисляется на сервере. */}
+      {isBundle ? (
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="text-zinc-700 dark:text-zinc-300">
+            Цена бандла (расчётная)
+          </span>
+          <div
+            aria-live="polite"
+            className="rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 text-zinc-900 dark:text-zinc-50 tabular-nums"
+          >
+            {new Intl.NumberFormat('ru-RU').format(componentsSum)} ₽
+          </div>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Сумма компонентов × количество. Сервер пересчитает при сохранении.
+          </span>
+        </div>
+      ) : (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-zinc-700 dark:text-zinc-300">
+            Базовая цена (₽) <span className="text-rose-600">*</span>
+          </span>
+          <input
+            name="price"
+            type="number"
+            required
+            min="0"
+            step="any"
+            defaultValue={initialPrice}
+            aria-invalid={Boolean(fieldErrors.price)}
+            className={`rounded border px-3 py-2 outline-none focus:ring-1 bg-white dark:bg-zinc-950 ${
+              fieldErrors.price
+                ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
+                : 'border-zinc-300 dark:border-zinc-700 focus:border-indigo-500 focus:ring-indigo-500'
+            }`}
+          />
+          {fieldErrors.price?.map((e, i) => (
+            <p key={i} className="text-xs text-rose-600 dark:text-rose-400">{e}</p>
+          ))}
+        </label>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-700 dark:text-zinc-300">Артикул (SKU)</span>
@@ -312,11 +331,7 @@ export function ProductForm(props: Props) {
             </ul>
           )}
 
-          {components.length > 0 && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              💡 Σ компонентов: {new Intl.NumberFormat('ru-RU').format(componentsSum)} ₽
-            </p>
-          )}
+          {/* Σ-подсказка переехала наверх как «Цена бандла (расчётная)» — B5-revised */}
         </section>
       )}
 

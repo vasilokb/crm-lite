@@ -110,14 +110,27 @@ export const productComponentItemSchema = z.object({
   quantity:    z.number().int().positive(),
 });
 
-export const productInputSchema = z.object({
-  name:        trimmed(200),
-  description: optTrimmed(2000),
-  price:       z.number().positive(),
-  sku:         optTrimmed(60),
-  // Состав бандла (режим B): undefined = не бандл; [] = бандл без компонентов (допустимо временно).
-  components:  z.array(productComponentItemSchema).optional(),
-});
+// B5-revised: для бандла (есть components) цена = Σ на сервере, из формы игнорируется.
+// Для простого продукта price обязателен.
+export const productInputSchema = z
+  .object({
+    name:        trimmed(200),
+    description: optTrimmed(2000),
+    price:       z.number().positive().optional(),
+    sku:         optTrimmed(60),
+    // Состав бандла (режим B): undefined = не бандл; [] = бандл без компонентов (допустимо временно).
+    components:  z.array(productComponentItemSchema).optional(),
+  })
+  .superRefine((v, ctx) => {
+    const hasComponents = Array.isArray(v.components) && v.components.length > 0;
+    if (!hasComponents && v.price === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['price'],
+        message: 'Цена обязательна для простого продукта',
+      });
+    }
+  });
 export type ProductInput = z.infer<typeof productInputSchema>;
 
 export const lineItemCreateSchema = z.object({
