@@ -139,6 +139,64 @@ export async function seedDemoData(
       organizationId,
     },
   });
+
+  // === демо-продукты / бандл / позиции / скидка (фаза P7) ===
+  const stand = await tx.product.upsert({
+    where: { organizationId_name: { organizationId, name: 'Стенд «Стандарт»' } },
+    update: {},
+    create: { name: 'Стенд «Стандарт»', price: 800_000, organizationId },
+  });
+  const mount = await tx.product.upsert({
+    where: { organizationId_name: { organizationId, name: 'Монтаж оборудования' } },
+    update: {},
+    create: { name: 'Монтаж оборудования', price: 120_000, organizationId },
+  });
+  const design = await tx.product.upsert({
+    where: { organizationId_name: { organizationId, name: 'Дизайн-проект' } },
+    update: {},
+    create: { name: 'Дизайн-проект', price: 150_000, organizationId },
+  });
+  const bundle = await tx.product.upsert({
+    where: { organizationId_name: { organizationId, name: 'Комплекс «Под ключ»' } },
+    update: {},
+    create: { name: 'Комплекс «Под ключ»', price: 1_000_000, organizationId },
+  });
+  await Promise.all([
+    tx.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId, bundleId: bundle.id, componentId: stand.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: stand.id, quantity: 1, organizationId },
+    }),
+    tx.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId, bundleId: bundle.id, componentId: mount.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: mount.id, quantity: 2, organizationId },
+    }),
+    tx.productComponent.upsert({
+      where: { organizationId_bundleId_componentId: { organizationId, bundleId: bundle.id, componentId: design.id } },
+      update: {},
+      create: { bundleId: bundle.id, componentId: design.id, quantity: 1, organizationId },
+    }),
+  ]);
+  // Позиции сделки o1 (снапшот unitPrice явный; идемпотентность через findFirst — дубли в сделке разрешены).
+  const li1 = await tx.lineItem.findFirst({ where: { opportunityId: o1.id, productId: bundle.id } });
+  if (!li1) {
+    await tx.lineItem.create({
+      data: { opportunityId: o1.id, productId: bundle.id, quantity: 1, unitPrice: bundle.price, organizationId },
+    });
+  }
+  const li2 = await tx.lineItem.findFirst({ where: { opportunityId: o1.id, productId: mount.id, unitPrice: mount.price } });
+  if (!li2) {
+    await tx.lineItem.create({
+      data: { opportunityId: o1.id, productId: mount.id, quantity: 1, unitPrice: mount.price, organizationId },
+    });
+  }
+  // Subtotal = 1_000_000 + 120_000 = 1_120_000; discount = 20_000 → amount = 1_100_000.
+  await tx.opportunity.update({
+    where: { id: o1.id },
+    data: { discount: 20_000, amount: 1_100_000 },
+  });
+
   await tx.opportunity.create({
     data: {
       title: 'Проект Acme',
