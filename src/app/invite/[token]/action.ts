@@ -54,7 +54,7 @@ export async function acceptInviteAction(
 
       // аннулировать токен (повторное использование → invite_invalid)
       await tx.inviteToken.delete({ where: { id: t.id } });
-    });
+    }, { timeout: 30_000, maxWait: 10_000 });
   } catch (e) {
     if (e instanceof Error) {
       if (e.message === 'invite_invalid') {

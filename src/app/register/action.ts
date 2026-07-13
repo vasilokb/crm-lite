@@ -37,33 +37,37 @@ export async function registerAction(
 
   try {
     // Транзакция: User + Organization + Membership (БЕЗ Session!)
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email,
-          name,
-          passwordHash: bcrypt.hashSync(password, 10),
-        },
-      });
-      const org = await tx.organization.create({
-        data: { name: companyName, slug },
-      });
-      // Onboarding: 5 дефолтных стадий воронки для новой организации.
-      // Без этого getStages() вернёт [] → createOpportunity/convertLead не работают.
-      await seedDefaultStages(tx, org.id);
-      // Демо-данные: 2 компании/контакта, 2 лида, 2 сделки, 2 активности +
-      // 2 демо-участника команды (Jane Doe, John Doe, пароль `demo1234`).
-      // Учебный проект: в реальном B2B — вынести в опцию.
-      await seedDemoData(tx, org.id, user.id, org.slug);
-      await tx.membership.create({
-        data: {
-          userId: user.id,
-          organizationId: org.id,
-          role: 'owner',
-          status: 'active',
-        },
-      });
-    });
+    // timeout увеличен: registration + seedDemoData (много insert'ов на Neon) не укладываются в дефолт 5s.
+    await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email,
+            name,
+            passwordHash: bcrypt.hashSync(password, 10),
+          },
+        });
+        const org = await tx.organization.create({
+          data: { name: companyName, slug },
+        });
+        // Onboarding: 5 дефолтных стадий воронки для новой организации.
+        // Без этого getStages() вернёт [] → createOpportunity/convertLead не работают.
+        await seedDefaultStages(tx, org.id);
+        // Демо-данные: 2 компании/контакта, 2 лида, 2 сделки, 2 активности +
+        // 2 демо-участника команды (Jane Doe, John Doe, пароль `demo1234`).
+        // Учебный проект: в реальном B2B — вынести в опцию.
+        await seedDemoData(tx, org.id, user.id, org.slug);
+        await tx.membership.create({
+          data: {
+            userId: user.id,
+            organizationId: org.id,
+            role: 'owner',
+            status: 'active',
+          },
+        });
+      },
+      { timeout: 30_000, maxWait: 10_000 },
+    );
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
       return { error: 'Пользователь с таким email уже существует' };

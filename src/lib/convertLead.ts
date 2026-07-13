@@ -98,7 +98,7 @@ export async function convertLead(
         contactId:     contact.id,
         opportunityId: opportunity?.id ?? null,
       };
-    });
+    }, { timeout: 30_000, maxWait: 10_000 });
   } catch (err) {
     // Защита от race: уникальный индекс на Opportunity.leadId.
     if (
